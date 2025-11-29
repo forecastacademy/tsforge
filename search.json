@@ -1,0 +1,58 @@
+[
+  {
+    "objectID": "tutorials/01_intro.html",
+    "href": "tutorials/01_intro.html",
+    "title": "Getting Started with tsforge",
+    "section": "",
+    "text": "Getting Started\nHere’s a quick demo:\nimport matplotlib.pyplot as plt\nsales = [50, 70, 60, 90, 85, 100] months = range(1, 7)\nplt.plot(months, sales, marker=“o”) plt.title(“Monthly Sales Trend”) plt.xlabel(“Month”) plt.ylabel(“Sales”) plt.show()",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "Getting Started with tsforge"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "tsforge",
+    "section": "",
+    "text": "tsforge is a Python package for building and managing forecasting features.\nIt’s designed to make it easy to:\n\n🏗️ Engineer time series features (lags, rolling stats, seasonalities)\n\n⚡ Scale feature creation across many series quickly\n\n🔗 Integrate cleanly with Nixtla’s ecosystem (statsforecast, mlforecast, etc.)\n\n📈 Support end-to-end forecasting pipelines\n\n\n\n\n\nGetting Started\n\nFeature Engineering\n\n\n\n\n\nForecasting is rarely just “fit a model.” Most of the heavy lifting happens in data prep and feature engineering.\ntsforge gives you a reliable, repeatable toolkit for that messy step, so you can spend more time on modeling and decision-making.\n\n\n\n\n```bash pip install tsforge",
+    "crumbs": [
+      "Home",
+      "tsforge"
+    ]
+  },
+  {
+    "objectID": "index.html#tutorials",
+    "href": "index.html#tutorials",
+    "title": "tsforge",
+    "section": "",
+    "text": "Getting Started\n\nFeature Engineering",
+    "crumbs": [
+      "Home",
+      "tsforge"
+    ]
+  },
+  {
+    "objectID": "index.html#why-tsforge",
+    "href": "index.html#why-tsforge",
+    "title": "tsforge",
+    "section": "",
+    "text": "Forecasting is rarely just “fit a model.” Most of the heavy lifting happens in data prep and feature engineering.\ntsforge gives you a reliable, repeatable toolkit for that messy step, so you can spend more time on modeling and decision-making.",
+    "crumbs": [
+      "Home",
+      "tsforge"
+    ]
+  },
+  {
+    "objectID": "index.html#installation",
+    "href": "index.html#installation",
+    "title": "tsforge",
+    "section": "",
+    "text": "```bash pip install tsforge",
+    "crumbs": [
+      "Home",
+      "tsforge"
+    ]
+  }
+]

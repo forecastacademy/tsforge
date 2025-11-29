@@ -1,0 +1,239 @@
+/* ----------------------------- */
+/* Sidebar styling (light + accent) */
+/* ----------------------------- */
+.sidebar {
+  background-color: #fdfdfd; /* near white for clarity */
+  border-right: 1px solid #e6e6e6;
+  color: #2d2a55; /* deep purple/navy text */
+}
+
+.sidebar a {
+  color: #2d2a55; /* deep purple/navy links */
+  font-weight: 500;
+}
+
+.sidebar a:hover {
+  color: #0099cc; /* brighter aqua hover */
+}
+
+/* ----------------------------- */
+/* Navbar styling (lighter gradient) */
+/* ----------------------------- */
+.navbar {
+  background: linear-gradient(90deg, #d9d6f5 0%, #047395 100%);
+  border-bottom: 1px solid #ccc;
+  min-height: 70px;
+  padding-top: 5px;
+  padding-bottom: 0px;
+}
+
+.navbar a,
+.navbar .navbar-title {
+  color: #2d2a55 !important; /* dark text for contrast */
+  font-weight: 600;
+}
+
+.navbar a:hover {
+  color: #005b99 !important;
+}
+
+/* -------- Logo sizing -------- */
+.navbar-brand img {
+  max-height: 85px;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===========================================
+   NAVBAR ICONS (search, dark-mode, GitHub)
+   Quarto renders search & toggle as pseudo-elements,
+   so we color via CSS variables + ::before.
+   =========================================== */
+
+/* Tools container: unify color defaults */
+.navbar .quarto-navbar-tools,
+.navbar .quarto-navbar-tools * {
+  color: var(--quarto-navbar-fg) !important;
+  fill: var(--quarto-navbar-fg) !important;
+  stroke: var(--quarto-navbar-fg) !important;
+}
+
+/* --- Search button --- */
+button.quarto-search-button {
+  /* ensure the button itself carries the brand color */
+  color: var(--quarto-navbar-fg) !important;
+}
+/* Quarto draws the magnifier via ::before with a mask — tint it here */
+button.quarto-search-button::before {
+  background-color: var(--quarto-navbar-fg) !important;
+}
+button.quarto-search-button:hover {
+  color: var(--quarto-navbar-hl) !important;
+}
+button.quarto-search-button:hover::before {
+  background-color: var(--quarto-navbar-hl) !important;
+}
+
+/* --- Dark mode toggle --- */
+#quarto-color-scheme-toggle {
+  color: var(--quarto-navbar-fg) !important;
+}
+#quarto-color-scheme-toggle::before {
+  background-color: var(--quarto-navbar-fg) !important;
+}
+#quarto-color-scheme-toggle:hover {
+  color: var(--quarto-navbar-hl) !important;
+}
+#quarto-color-scheme-toggle:hover::before {
+  background-color: var(--quarto-navbar-hl) !important;
+}
+
+/* --- GitHub link (usually an <a> with an inline SVG) --- */
+.navbar .quarto-navbar-tools .nav-link,
+.navbar .quarto-navbar-tools .nav-link svg,
+.navbar .quarto-navbar-tools .nav-link svg path {
+  color: var(--quarto-navbar-fg) !important;
+  fill: var(--quarto-navbar-fg) !important;
+  stroke: var(--quarto-navbar-fg) !important;
+}
+.navbar .quarto-navbar-tools .nav-link:hover,
+.navbar .quarto-navbar-tools .nav-link:hover svg,
+.navbar .quarto-navbar-tools .nav-link:hover svg path {
+  color: var(--quarto-navbar-hl) !important;
+  fill: var(--quarto-navbar-hl) !important;
+  stroke: var(--quarto-navbar-hl) !important;
+}
+
+/* Optional: bump icon size a touch */
+.navbar .quarto-navbar-tools svg { width: 1.3em; height: 1.3em; }
+
+/* -------- Typography -------- */
+h1, h2, h3 {
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 600;
+  color: #2d2a55;
+}
+body {
+  font-family: "Source Sans Pro", sans-serif;
+  color: #333;
+  background-color: #fff;
+}
+
+/* ----------------------------- */
+/* Dark mode overrides           */
+/* ----------------------------- */
+
+/* Sidebar background + text in dark mode */
+body.quarto-dark .sidebar {
+  background-color: #1e1e2f; /* deep purple/grey background */
+  color: #e6e6f0;           /* light grey text */
+}
+
+body.quarto-dark .sidebar a {
+  color: #e6e6f0 !important;  /* light grey links */
+}
+
+body.quarto-dark .sidebar a:hover {
+  color: #66d9ef !important;  /* aqua hover */
+}
+
+/* Headings in dark mode */
+body.quarto-dark h1,
+body.quarto-dark h2,
+body.quarto-dark h3 {
+  color: #e6e6f0; /* light headings */
+}
+/* ----------------------------- */
+/* Dark mode content overrides   */
+/* ----------------------------- */
+
+/* Main content background + text */
+body.quarto-dark,
+body.quarto-dark .content {
+  background-color: #1e1e2f !important; /* deep purple/grey background */
+  color: #e6e6f0 !important;           /* light text */
+}
+
+/* Links in dark mode */
+body.quarto-dark a {
+  color: #66d9ef !important;           /* aqua links */
+}
+body.quarto-dark a:hover {
+  color: #9aedfe !important;           /* lighter aqua hover */
+}
+
+/* Right-side TOC panel */
+body.quarto-dark #TOC {
+  background-color: #1e1e2f !important; /* match main content */
+  color: #e6e6f0 !important;
+  border-left: 1px solid #333;          /* subtle divider */
+}
+/* ----------------------------------- */
+/* Make right "On this page" TOC blend */
+/* ----------------------------------- */
+#quarto-margin-sidebar {
+  background: transparent !important; /* match content background */
+  border-left: none !important;       /* remove vertical divider */
+  margin: 0 !important;
+  padding: 0 1.5rem !important;       /* same padding as content */
+  box-shadow: none !important;        /* remove any subtle shadow */
+}
+
+/* TOC text styles (light mode) */
+#quarto-margin-sidebar,
+#quarto-margin-sidebar a {
+  color: inherit !important;  /* same as main content */
+}
+
+/* Dark mode adjustments */
+body.quarto-dark #quarto-margin-sidebar {
+  background: transparent !important;
+  border-left: none !important;
+  color: #e6e6f0 !important;  /* same as main content text */
+}
+body.quarto-dark #quarto-margin-sidebar a {
+  color: #66d9ef !important;   /* aqua links to match brand */
+}
+/* --------------------------------------------------- */
+/* Remove the vertical bar Quarto shows beside the TOC */
+/* --------------------------------------------------- */
+
+/* Reset the TOC sidebar so it blends with content */
+#quarto-margin-sidebar {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove borders Quarto applies to margin columns */
+.page-columns .margin-sidebar,
+.page-columns .sidebar.margin-sidebar,
+.page-columns #quarto-margin-sidebar {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* In dark mode, also ensure no divider line */
+body.quarto-dark .page-columns .margin-sidebar,
+body.quarto-dark .page-columns #quarto-margin-sidebar {
+  border: none !important;
+  box-shadow: none !important;
+}
+/* ----------------------------- */
+/* Force navbar brand + links to match in dark mode */
+/* ----------------------------- */
+body.quarto-dark .navbar .navbar-title,
+body.quarto-dark .navbar a,
+body.quarto-dark .navbar .nav-link {
+  color: #e6e6f0 !important;   /* unified brand/link color */
+  font-weight: 600;
+}
+
+body.quarto-dark .navbar .navbar-title:hover,
+body.quarto-dark .navbar a:hover,
+body.quarto-dark .navbar .nav-link:hover {
+  color: #66d9ef !important;   /* aqua hover */
+}

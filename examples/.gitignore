@@ -1,8 +1,0 @@
-# data (raw, interim, output)
-data/input/raw/
-data/interim/
-data/output/
-
-# OS/editor files
-.DS_Store
-.ipynb_checkpoints/
