@@ -273,12 +273,16 @@ ul.task-list li input[type="checkbox"] {
     <a class="dropdown-item" href="./tutorials/01_intro.html">
  <span class="dropdown-text">Getting Started</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./tutorials/plot_timeseries.html">
+ <span class="dropdown-text">Plot Time Series</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/your-username/tsforge"> <i class="bi bi-github" role="img" aria-label="GitHub">
+    <a class="nav-link" href="https://github.com/forecastacademy/tsforge"> <i class="bi bi-github" role="img" aria-label="GitHub">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -336,13 +340,13 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./tutorials/01_intro.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Getting Started with tsforge</span></a>
+ <span class="menu-text">Getting Started</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./tutorials/plot_timeseries.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">plot_timeseries.html</span></a>
+ <span class="menu-text">plot_timeseries</span></a>
   </div>
 </li>
       </ul>
@@ -513,7 +517,7 @@ It’s designed to make it easy to:</p>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/forecastacademy\.github\.io\/tsforge\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

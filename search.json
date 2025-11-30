@@ -2,13 +2,13 @@
   {
     "objectID": "tutorials/01_intro.html",
     "href": "tutorials/01_intro.html",
-    "title": "Getting Started with tsforge",
+    "title": "Getting Started",
     "section": "",
-    "text": "Getting Started\nHere’s a quick demo:\nimport matplotlib.pyplot as plt\nsales = [50, 70, 60, 90, 85, 100] months = range(1, 7)\nplt.plot(months, sales, marker=“o”) plt.title(“Monthly Sales Trend”) plt.xlabel(“Month”) plt.ylabel(“Sales”) plt.show()",
+    "text": "1. Welcome to TSForge\nTSForge is a modern, production-grade forecasting toolkit designed for:\n\nProfessional forecasters\n\nData science teams\n\nEnterprise forecasting systems\n\nStudents learning forecasting through Forecast Academy\n\nTSForge includes:\n\nCleaning & preprocessing utilities\n\nEDA & diagnostics\n\nFeature engineering\n\nForecast evaluation\n\nHigh-grade visualization tools (Plotly-based)\n\nA consistent architecture designed for production and education\n\nThis guide helps you install TSForge, load your first dataset, and run your first visualization.\n\n\n\n2. Installation\nTSForge requires Python 3.9+.\nInstall from your GitHub repo (adjust if needed):\n```bash pip install -e .",
     "crumbs": [
       "Home",
       "Tutorials",
-      "Getting Started with tsforge"
+      "Getting Started"
     ]
   },
   {
@@ -53,6 +53,126 @@
     "crumbs": [
       "Home",
       "tsforge"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html",
+    "href": "tutorials/plot_timeseries.html",
+    "title": "plot_timeseries",
+    "section": "",
+    "text": "plot_timeseries() is TSForge’s flagship visualization engine — a modular, enterprise-grade Plotly interface that supports:\n\nOverlay, facet, and dropdown views\n\nHierarchical time series\n\nGlobal & local events\n\nAnomalies\n\nForecasts + prediction intervals\n\nMultiple professional themes\n\nSmoothing\n\nAuto-selection of IDs when a dataset is large",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#event-styling",
+    "href": "tutorials/plot_timeseries.html#event-styling",
+    "title": "plot_timeseries",
+    "section": "Event Styling",
+    "text": "Event Styling\nevents_config = {\n  \"color\": \"#444\",\n  \"opacity\": 0.85,\n  \"stagger_labels\": True\n}\n\nplot_timeseries(\n  df_actuals,\n  id_col=\"unique_id\",\n  date_col=\"ds\",\n  value_col=\"y\",\n  events_global=events_global,\n  events_config=events_config,\n)",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#anomaly-styling",
+    "href": "tutorials/plot_timeseries.html#anomaly-styling",
+    "title": "plot_timeseries",
+    "section": "Anomaly Styling",
+    "text": "Anomaly Styling\nplot_timeseries(\n  df_actuals,\n  id_col=\"unique_id\",\n  date_col=\"ds\",\n  value_col=\"y\",\n  anomalies=anoms_df,\n  anomalies_config={\n    \"color\": \"crimson\",\n    \"marker_symbol\": \"x\",\n    \"marker_size\": 10\n  }\n)\n\n## Theme Styling\n```python\nfig = plot_timeseries(\n    df=df_actuals,\n    id_col=\"unique_id\",\n    date_col=\"ds\",\n    value_col=\"y\",\n    events_global=events_global,\n    anomalies=anoms_df,\n    mode=\"overlay\",\n    theme=\"dark\",\n)\nfig",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#core-inputs",
+    "href": "tutorials/plot_timeseries.html#core-inputs",
+    "title": "plot_timeseries",
+    "section": "Core Inputs",
+    "text": "Core Inputs\n\n\n\nParameter\nDescription\n\n\n\n\ndf\nInput actuals DataFrame.\n\n\nid_col\nColumn identifying unique series (e.g., item/store).\n\n\ndate_col\nTimestamp column (must be coercible to datetime).\n\n\nvalue_col\nActual observed target column.\n\n\n\n\nOptional Inputs — Forecasts\n\n\n\n\n\n\n\nParameter\nDescription\n\n\n\n\nforecast\nForecast DataFrame containing yhat and prediction interval columns.\n\n\nforecast_value_col\nName of the point forecast column (default: yhat).\n\n\nlevel\nList of uncertainty interval levels (e.g., [80, 95]).\n\n\nlo_pattern\nPattern for lower PI column names.\n\n\nhi_pattern\nPattern for upper PI column names.",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#events",
+    "href": "tutorials/plot_timeseries.html#events",
+    "title": "plot_timeseries",
+    "section": "Events",
+    "text": "Events\n\n\n\n\n\n\n\nParameter\nMeaning\n\n\n\n\nevents_global\nEvents that apply to all series.\n\n\nevents_local\nEvents tied to a specific unique_id.\n\n\nevents\nInline event column in df (boolean/string).\n\n\nanomalies\nEither a column name or a DataFrame of anomaly flags.\n\n\nanomaly_flag_value\nValue representing anomaly when using inline flag.",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#anomalies-1",
+    "href": "tutorials/plot_timeseries.html#anomalies-1",
+    "title": "plot_timeseries",
+    "section": "Anomalies",
+    "text": "Anomalies\n\n\n\n\n\n\n\nParameter\nDescription\n\n\n\n\nanomalies\nEither a column name or a DataFrame of anomaly flags.\n\n\nanomaly_flag_value\nValue representing anomaly when using inline flag.",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#rendering",
+    "href": "tutorials/plot_timeseries.html#rendering",
+    "title": "plot_timeseries",
+    "section": "Rendering",
+    "text": "Rendering\n\n\n\nParameter\nDescription\n\n\n\n\ntheme\nfa / mckinsey / minimal / dark\n\n\nsmooth_window\nMoving window smoother\n\n\nstyle\nTitle + axis labels",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#modes",
+    "href": "tutorials/plot_timeseries.html#modes",
+    "title": "plot_timeseries",
+    "section": "Modes",
+    "text": "Modes\n\n\n\nMode\nDescription\n\n\n\n\noverlay\nAll series plotted on one set of axes.\n\n\nfacet\nSmall multiples (one series per subplot).\n\n\ndropdown\nSingle view with an interactive selector.",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#themes",
+    "href": "tutorials/plot_timeseries.html#themes",
+    "title": "plot_timeseries",
+    "section": "Themes",
+    "text": "Themes\n\n\n\nTheme\nDescription\n\n\n\n\nfa\nForecast Academy brand (default).\n\n\nmckinsey\nConsulting-grade clean style.\n\n\nminimal\nScandinavian-style simplicity.\n\n\ndark\nHigh-contrast dark mode optimized for demos.",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#styling-themes-titles",
+    "href": "tutorials/plot_timeseries.html#styling-themes-titles",
+    "title": "plot_timeseries",
+    "section": "Styling, Themes, & Titles",
+    "text": "Styling, Themes, & Titles\n\nGeneral Styling (style=)\n\n\n\nKey\nDescription\n\n\n\n\ntitle\nMain chart title\n\n\nsubtitle\nSecondary subtitle shown above the plot\n\n\nx_title\nX-axis label\n\n\ny_title\nY-axis label\n\n\nfont_size\nOverride theme font size\n\n\nfont_family\nOverride theme font\n\n\nbackground\nPlot & paper background override\n\n\n\n\n\nStyling Events (events_config=)\nYou can customize event appearance:\n\n\n\n\n\n\n\nKey\nDescription\n\n\n\n\ncolor\nVertical event line + label color\n\n\nopacity\nTransparency of vertical event lines\n\n\nstagger_labels\nWhether to stagger event labels to avoid overlap\n\n\nline_width\n(Optional) Width of event lines\n\n\nlabel_font_size\n(Optional) Font size of event labels\n\n\n\n\n\nStyling Anomalies (anomalies_config=)\nCustomize anomaly marker appearance:\n\n\n\n\n\n\n\nKey\nDescription\n\n\n\n\ncolor\nMarker color for anomalies\n\n\nmarker_symbol\nPlotly symbol (e.g., x, circle, diamond)\n\n\nmarker_size\nMarker size\n\n\nline_width\n(Optional) Border width for anomaly markers\n\n\nopacity\n(Optional) Opacity of anomaly markers",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
     ]
   }
 ]

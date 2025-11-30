@@ -1,0 +1,1 @@
+Sitemap: https://forecastacademy.github.io/tsforge/sitemap.xml

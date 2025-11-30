@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -273,12 +308,16 @@ ul.task-list li input[type="checkbox"] {
     <a class="dropdown-item" href="../tutorials/01_intro.html">
  <span class="dropdown-text">Getting Started</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../tutorials/plot_timeseries.html">
+ <span class="dropdown-text">Plot Time Series</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/your-username/tsforge"> <i class="bi bi-github" role="img" aria-label="GitHub">
+    <a class="nav-link" href="https://github.com/forecastacademy/tsforge"> <i class="bi bi-github" role="img" aria-label="GitHub">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -294,7 +333,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/plot_timeseries.html">plot_timeseries.html</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/plot_timeseries.html">plot_timeseries</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -336,13 +375,13 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../tutorials/01_intro.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Getting Started with tsforge</span></a>
+ <span class="menu-text">Getting Started</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../tutorials/plot_timeseries.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">plot_timeseries.html</span></a>
+ <span class="menu-text">plot_timeseries</span></a>
   </div>
 </li>
       </ul>
@@ -352,18 +391,685 @@ ul.task-list li input[type="checkbox"] {
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">1. Introduction</a>
+  <ul class="collapse">
+  <li><a href="#this-tutorial-walks-through-the-complete-workflow-using-synthetic-but-realistic-data." id="toc-this-tutorial-walks-through-the-complete-workflow-using-synthetic-but-realistic-data." class="nav-link" data-scroll-target="#this-tutorial-walks-through-the-complete-workflow-using-synthetic-but-realistic-data.">This tutorial walks through the complete workflow using synthetic but realistic data.</a></li>
+  </ul></li>
+  <li><a href="#quick-start" id="toc-quick-start" class="nav-link" data-scroll-target="#quick-start">2. Quick Start</a></li>
+  <li><a href="#architecture-diagram" id="toc-architecture-diagram" class="nav-link" data-scroll-target="#architecture-diagram">3. Architecture Diagram</a></li>
+  <li><a href="#load-libraries" id="toc-load-libraries" class="nav-link" data-scroll-target="#load-libraries">4. Load Libraries</a></li>
+  <li><a href="#build-a-hierarhical-dataset." id="toc-build-a-hierarhical-dataset." class="nav-link" data-scroll-target="#build-a-hierarhical-dataset.">5. Build a Hierarhical Dataset.</a></li>
+  <li><a href="#create-a-forecast-dataset" id="toc-create-a-forecast-dataset" class="nav-link" data-scroll-target="#create-a-forecast-dataset">6. Create a Forecast Dataset</a></li>
+  <li><a href="#global-events" id="toc-global-events" class="nav-link" data-scroll-target="#global-events">7. Global Events</a></li>
+  <li><a href="#local-events-per-id" id="toc-local-events-per-id" class="nav-link" data-scroll-target="#local-events-per-id">8. Local Events (Per-ID)</a></li>
+  <li><a href="#anomalies" id="toc-anomalies" class="nav-link" data-scroll-target="#anomalies">9. Anomalies</a></li>
+  <li><a href="#basic-overlay-plotly" id="toc-basic-overlay-plotly" class="nav-link" data-scroll-target="#basic-overlay-plotly">10. Basic Overlay Plotly</a></li>
+  <li><a href="#faceted-small-multiples" id="toc-faceted-small-multiples" class="nav-link" data-scroll-target="#faceted-small-multiples">11. Faceted Small Multiples</a></li>
+  <li><a href="#dropdown-mode-interactive-selector" id="toc-dropdown-mode-interactive-selector" class="nav-link" data-scroll-target="#dropdown-mode-interactive-selector">12. Dropdown Mode (Interactive Selector)</a></li>
+  <li><a href="#styling-options" id="toc-styling-options" class="nav-link" data-scroll-target="#styling-options">13. Styling Options</a></li>
+  <li><a href="#plot-styling" id="toc-plot-styling" class="nav-link" data-scroll-target="#plot-styling">Plot Styling</a>
+  <ul class="collapse">
+  <li><a href="#event-styling" id="toc-event-styling" class="nav-link" data-scroll-target="#event-styling">Event Styling</a></li>
+  <li><a href="#anomaly-styling" id="toc-anomaly-styling" class="nav-link" data-scroll-target="#anomaly-styling">Anomaly Styling</a></li>
+  </ul></li>
+  <li><a href="#parameter-reference" id="toc-parameter-reference" class="nav-link" data-scroll-target="#parameter-reference">14. Parameter Reference</a>
+  <ul class="collapse">
+  <li><a href="#core-inputs" id="toc-core-inputs" class="nav-link" data-scroll-target="#core-inputs">Core Inputs</a>
+  <ul class="collapse">
+  <li><a href="#optional-inputs-forecasts" id="toc-optional-inputs-forecasts" class="nav-link" data-scroll-target="#optional-inputs-forecasts">Optional Inputs — Forecasts</a></li>
+  </ul></li>
+  <li><a href="#events" id="toc-events" class="nav-link" data-scroll-target="#events">Events</a></li>
+  <li><a href="#anomalies-1" id="toc-anomalies-1" class="nav-link" data-scroll-target="#anomalies-1">Anomalies</a></li>
+  <li><a href="#rendering" id="toc-rendering" class="nav-link" data-scroll-target="#rendering">Rendering</a></li>
+  <li><a href="#modes" id="toc-modes" class="nav-link" data-scroll-target="#modes">Modes</a></li>
+  <li><a href="#themes" id="toc-themes" class="nav-link" data-scroll-target="#themes">Themes</a></li>
+  <li><a href="#styling-themes-titles" id="toc-styling-themes-titles" class="nav-link" data-scroll-target="#styling-themes-titles">Styling, Themes, &amp; Titles</a>
+  <ul class="collapse">
+  <li><a href="#general-styling-style" id="toc-general-styling-style" class="nav-link" data-scroll-target="#general-styling-style">General Styling (<code>style=</code>)</a></li>
+  <li><a href="#styling-events-events_config" id="toc-styling-events-events_config" class="nav-link" data-scroll-target="#styling-events-events_config">Styling Events (<code>events_config=</code>)</a></li>
+  <li><a href="#styling-anomalies-anomalies_config" id="toc-styling-anomalies-anomalies_config" class="nav-link" data-scroll-target="#styling-anomalies-anomalies_config">Styling Anomalies (<code>anomalies_config=</code>)</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">15. Summary</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/plot_timeseries.html">plot_timeseries.html</a></li></ol></nav></header>
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/plot_timeseries.html">plot_timeseries</a></li></ol></nav>
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">plot_timeseries</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+<p class="subtitle lead">TSForge Tutorial — plot_timeseries() Deep Dive</p>
+</div>
 
 
 
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
 
 
+</header>
 
 
+<section id="introduction" class="level1">
+<h1>1. Introduction</h1>
+<p><code>plot_timeseries()</code> is TSForge’s <strong>flagship visualization engine</strong> — a modular, enterprise-grade Plotly interface that supports:</p>
+<ul>
+<li>Overlay, facet, and dropdown views<br>
+</li>
+<li>Hierarchical time series<br>
+</li>
+<li>Global &amp; local events<br>
+</li>
+<li>Anomalies<br>
+</li>
+<li>Forecasts + prediction intervals<br>
+</li>
+<li>Multiple professional themes<br>
+</li>
+<li>Smoothing<br>
+</li>
+<li>Auto-selection of IDs when a dataset is large</li>
+</ul>
+<section id="this-tutorial-walks-through-the-complete-workflow-using-synthetic-but-realistic-data." class="level2">
+<h2 class="anchored" data-anchor-id="this-tutorial-walks-through-the-complete-workflow-using-synthetic-but-realistic-data.">This tutorial walks through the complete workflow using synthetic but realistic data.</h2>
+</section>
+</section>
+<section id="quick-start" class="level1">
+<h1>2. Quick Start</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tsforge.plots.charts <span class="im">import</span> plot_timeseries</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="architecture-diagram" class="level1">
+<h1>3. Architecture Diagram</h1>
+<pre class="mermaid"><code>flowchart TB
+
+A[Input DataFrames] --&gt; B[Group / Aggregate]
+B --&gt; C[Resample]
+C --&gt; D[Select IDs]
+D --&gt; E[Smoothing]
+E --&gt; F[Merge Events]
+F --&gt; G[Normalize Anomalies]
+G --&gt; H[Render Mode&lt;br&gt;overlay/facet/dropdown]
+H --&gt; I[Theme + Styling]
+I --&gt; J[Plotly Figure]</code></pre>
+<hr>
+</section>
+<section id="load-libraries" class="level1">
+<h1>4. Load Libraries</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tsforge.plots.charts <span class="im">import</span> plot_timeseries</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tsforge.plots.core.theme <span class="im">import</span> THEMES</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="build-a-hierarhical-dataset." class="level1">
+<h1>5. Build a Hierarhical Dataset.</h1>
+<p>Most forecasting datasets include levels such as: - Department - Item - Store</p>
+<p>Below we construct a dataset with: - unique_id — BEV_1, BEV_2, SNK_1, SNK_2 - department — BEV or SNK - ds — date - y — actual daily sales</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>dates <span class="op">=</span> pd.date_range(<span class="st">"2022-01-01"</span>, periods<span class="op">=</span><span class="dv">120</span>, freq<span class="op">=</span><span class="st">"D"</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>departments <span class="op">=</span> [<span class="st">"BEV"</span>, <span class="st">"SNK"</span>]</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>items <span class="op">=</span> [<span class="st">"1"</span>, <span class="st">"2"</span>]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>actuals <span class="op">=</span> []</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> dept <span class="kw">in</span> departments:</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> item <span class="kw">in</span> items:</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        uid <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>dept<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>item<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        lam <span class="op">=</span> <span class="dv">40</span> <span class="cf">if</span> dept <span class="op">==</span> <span class="st">"BEV"</span> <span class="cf">else</span> <span class="dv">25</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        y <span class="op">=</span> np.random.poisson(lam<span class="op">=</span>lam, size<span class="op">=</span><span class="bu">len</span>(dates))</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        df_tmp <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">"unique_id"</span>: uid,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">"department"</span>: dept,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ds"</span>: dates,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>            <span class="st">"y"</span>: y</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        })</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        actuals.append(df_tmp)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>df_actuals <span class="op">=</span> pd.concat(actuals).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>df_actuals.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="create-a-forecast-dataset" class="level1">
+<h1>6. Create a Forecast Dataset</h1>
+<p>Forecasts must match the identifiers in <code>df_actuals</code>. We simulate a simple uplift-based forecast with 80% and 95% prediction intervals.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>df_fcst <span class="op">=</span> (</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    df_actuals</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    .copy()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    .assign(</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        ds<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"ds"</span>] <span class="op">+</span> pd.Timedelta(days<span class="op">=</span><span class="dv">7</span>),</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        yhat<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"y"</span>] <span class="op">*</span> <span class="fl">1.05</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        yhat_lo_80<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">0.90</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        yhat_hi_80<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">1.10</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        yhat_lo_95<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">0.80</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        yhat_hi_95<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">1.20</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>df_fcst.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Prediction intervals are essential for inventory safety stock, risk assessment, and replenishment planning.</p>
+</section>
+<section id="global-events" class="level1">
+<h1>7. Global Events</h1>
+<p>Global events apply to all series.</p>
+<p>Examples: - Holidays - Company-wide promotions - Weather disruptions affecting supply chain</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>events_global <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ds"</span>: [<span class="st">"2022-02-14"</span>, <span class="st">"2022-05-30"</span>],</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"event"</span>: [<span class="st">"Valentine's Day"</span>, <span class="st">"Memorial Day"</span>]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>events_global[<span class="st">"ds"</span>] <span class="op">=</span> pd.to_datetime(events_global[<span class="st">"ds"</span>])</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>events_global</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="local-events-per-id" class="level1">
+<h1>8. Local Events (Per-ID)</h1>
+<p>Local events apply only to a specific item or department.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>events_local <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"unique_id"</span>: [<span class="st">"BEV_2"</span>, <span class="st">"BEV_2"</span>],</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ds"</span>: [<span class="st">"2022-03-10"</span>, <span class="st">"2022-06-01"</span>],</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"event"</span>: [<span class="st">"Packaging Change"</span>, <span class="st">"Shelf Reset"</span>]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>events_local[<span class="st">"ds"</span>] <span class="op">=</span> pd.to_datetime(events_local[<span class="st">"ds"</span>])</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>events_local</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="anomalies" class="level1">
+<h1>9. Anomalies</h1>
+<p>An anomaly dataset can be generated from: - Outlier detection - QC rules - Unusually high/low sales</p>
+<p>TSForge expects: - unique_id - ds - flag column (default: anom_flag)</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>anoms_df <span class="op">=</span> (</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    df_actuals.sample(<span class="dv">8</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    .assign(anom_flag<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    .loc[:, [<span class="st">"unique_id"</span>, <span class="st">"ds"</span>, <span class="st">"anom_flag"</span>]]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>anoms_df.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="basic-overlay-plotly" class="level1">
+<h1>10. Basic Overlay Plotly</h1>
+<p>The overlay mode plots all selected series together.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    forecast<span class="op">=</span>df_fcst,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    level<span class="op">=</span>[<span class="dv">80</span>, <span class="dv">95</span>],</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    events_local<span class="op">=</span>events_local,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"overlay"</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"fa"</span>,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="faceted-small-multiples" class="level1">
+<h1>11. Faceted Small Multiples</h1>
+<p>Great for diagnostic inspection across many IDs.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    forecast<span class="op">=</span>df_fcst,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    level<span class="op">=</span>[<span class="dv">80</span>, <span class="dv">95</span>],</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    events_local<span class="op">=</span>events_local,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"facet"</span>,</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"mckinsey"</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="dropdown-mode-interactive-selector" class="level1">
+<h1>12. Dropdown Mode (Interactive Selector)</h1>
+<p>Dropdown mode reduces visual clutter when many IDs exist.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    forecast<span class="op">=</span>df_fcst,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    level<span class="op">=</span>[<span class="dv">80</span>, <span class="dv">95</span>],</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    events_local<span class="op">=</span>events_local,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"dropdown"</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"minimal"</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="styling-options" class="level1">
+<h1>13. Styling Options</h1>
+<p>The dark theme is optimized for: - Presentations - Videos - Demos - High-contrast environments</p>
+</section>
+<section id="plot-styling" class="level1">
+<h1>Plot Styling</h1>
+<p>TSForge provides a simple, clean way to customize titles, subtitles, axis labels, and layout elements using the <code>style</code> dictionary.</p>
+<p>This allows you to override theme defaults without touching Plotly directly.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    style<span class="op">=</span>{</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"title"</span>: <span class="st">"Demand With Forecast"</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"subtitle"</span>: <span class="st">"Styled using the TSForge 'style' dictionary"</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"x_title"</span>: <span class="st">"Date"</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"y_title"</span>: <span class="st">"Units Sold"</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"font_size"</span>: <span class="dv">14</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"background"</span>: <span class="st">"white"</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"fa"</span>,</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="event-styling" class="level2">
+<h2 class="anchored" data-anchor-id="event-styling">Event Styling</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>events_config <span class="op">=</span> {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"color"</span>: <span class="st">"#444"</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"opacity"</span>: <span class="fl">0.85</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"stagger_labels"</span>: <span class="va">True</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>plot_timeseries(</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  df_actuals,</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  events_global<span class="op">=</span>events_global,</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  events_config<span class="op">=</span>events_config,</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="anomaly-styling" class="level2">
+<h2 class="anchored" data-anchor-id="anomaly-styling">Anomaly Styling</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>plot_timeseries(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  df_actuals,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  anomalies_config<span class="op">=</span>{</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"color"</span>: <span class="st">"crimson"</span>,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"marker_symbol"</span>: <span class="st">"x"</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"marker_size"</span>: <span class="dv">10</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co">## Theme Styling</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>```python</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"overlay"</span>,</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"dark"</span>,</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="parameter-reference" class="level1">
+<h1>14. Parameter Reference</h1>
+<section id="core-inputs" class="level2">
+<h2 class="anchored" data-anchor-id="core-inputs">Core Inputs</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>df</code></td>
+<td>Input actuals DataFrame.</td>
+</tr>
+<tr class="even">
+<td><code>id_col</code></td>
+<td>Column identifying unique series (e.g., item/store).</td>
+</tr>
+<tr class="odd">
+<td><code>date_col</code></td>
+<td>Timestamp column (must be coercible to datetime).</td>
+</tr>
+<tr class="even">
+<td><code>value_col</code></td>
+<td>Actual observed target column.</td>
+</tr>
+</tbody>
+</table>
+<section id="optional-inputs-forecasts" class="level3">
+<h3 class="anchored" data-anchor-id="optional-inputs-forecasts">Optional Inputs — Forecasts</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 43%">
+<col style="width: 56%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>forecast</code></td>
+<td>Forecast DataFrame containing <code>yhat</code> and prediction interval columns.</td>
+</tr>
+<tr class="even">
+<td><code>forecast_value_col</code></td>
+<td>Name of the point forecast column (default: <code>yhat</code>).</td>
+</tr>
+<tr class="odd">
+<td><code>level</code></td>
+<td>List of uncertainty interval levels (e.g., <code>[80, 95]</code>).</td>
+</tr>
+<tr class="even">
+<td><code>lo_pattern</code></td>
+<td>Pattern for lower PI column names.</td>
+</tr>
+<tr class="odd">
+<td><code>hi_pattern</code></td>
+<td>Pattern for upper PI column names.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="events" class="level2">
+<h2 class="anchored" data-anchor-id="events">Events</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 52%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>events_global</code></td>
+<td>Events that apply to <strong>all</strong> series.</td>
+</tr>
+<tr class="even">
+<td><code>events_local</code></td>
+<td>Events tied to a specific <code>unique_id</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>events</code></td>
+<td>Inline event column in <code>df</code> (boolean/string).</td>
+</tr>
+<tr class="even">
+<td><code>anomalies</code></td>
+<td>Either a column name or a DataFrame of anomaly flags.</td>
+</tr>
+<tr class="odd">
+<td><code>anomaly_flag_value</code></td>
+<td>Value representing anomaly when using inline flag.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="anomalies-1" class="level2">
+<h2 class="anchored" data-anchor-id="anomalies-1">Anomalies</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 43%">
+<col style="width: 56%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>anomalies</code></td>
+<td>Either a column name or a DataFrame of anomaly flags.</td>
+</tr>
+<tr class="even">
+<td><code>anomaly_flag_value</code></td>
+<td>Value representing anomaly when using inline flag.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rendering" class="level2">
+<h2 class="anchored" data-anchor-id="rendering">Rendering</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>theme</code></td>
+<td>fa / mckinsey / minimal / dark</td>
+</tr>
+<tr class="even">
+<td><code>smooth_window</code></td>
+<td>Moving window smoother</td>
+</tr>
+<tr class="odd">
+<td><code>style</code></td>
+<td>Title + axis labels</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="modes" class="level2">
+<h2 class="anchored" data-anchor-id="modes">Modes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Mode</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>overlay</code></td>
+<td>All series plotted on one set of axes.</td>
+</tr>
+<tr class="even">
+<td><code>facet</code></td>
+<td>Small multiples (one series per subplot).</td>
+</tr>
+<tr class="odd">
+<td><code>dropdown</code></td>
+<td>Single view with an interactive selector.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="themes" class="level2">
+<h2 class="anchored" data-anchor-id="themes">Themes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Theme</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>fa</code></td>
+<td>Forecast Academy brand (default).</td>
+</tr>
+<tr class="even">
+<td><code>mckinsey</code></td>
+<td>Consulting-grade clean style.</td>
+</tr>
+<tr class="odd">
+<td><code>minimal</code></td>
+<td>Scandinavian-style simplicity.</td>
+</tr>
+<tr class="even">
+<td><code>dark</code></td>
+<td>High-contrast dark mode optimized for demos.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="styling-themes-titles" class="level2">
+<h2 class="anchored" data-anchor-id="styling-themes-titles">Styling, Themes, &amp; Titles</h2>
+<section id="general-styling-style" class="level3">
+<h3 class="anchored" data-anchor-id="general-styling-style">General Styling (<code>style=</code>)</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>title</code></td>
+<td>Main chart title</td>
+</tr>
+<tr class="even">
+<td><code>subtitle</code></td>
+<td>Secondary subtitle shown above the plot</td>
+</tr>
+<tr class="odd">
+<td><code>x_title</code></td>
+<td>X-axis label</td>
+</tr>
+<tr class="even">
+<td><code>y_title</code></td>
+<td>Y-axis label</td>
+</tr>
+<tr class="odd">
+<td><code>font_size</code></td>
+<td>Override theme font size</td>
+</tr>
+<tr class="even">
+<td><code>font_family</code></td>
+<td>Override theme font</td>
+</tr>
+<tr class="odd">
+<td><code>background</code></td>
+<td>Plot &amp; paper background override</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="styling-events-events_config" class="level3">
+<h3 class="anchored" data-anchor-id="styling-events-events_config">Styling Events (<code>events_config=</code>)</h3>
+<p>You can customize event appearance:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 74%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>color</code></td>
+<td>Vertical event line + label color</td>
+</tr>
+<tr class="even">
+<td><code>opacity</code></td>
+<td>Transparency of vertical event lines</td>
+</tr>
+<tr class="odd">
+<td><code>stagger_labels</code></td>
+<td>Whether to stagger event labels to avoid overlap</td>
+</tr>
+<tr class="even">
+<td><code>line_width</code></td>
+<td>(Optional) Width of event lines</td>
+</tr>
+<tr class="odd">
+<td><code>label_font_size</code></td>
+<td>(Optional) Font size of event labels</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="styling-anomalies-anomalies_config" class="level3">
+<h3 class="anchored" data-anchor-id="styling-anomalies-anomalies_config">Styling Anomalies (<code>anomalies_config=</code>)</h3>
+<p>Customize anomaly marker appearance:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 75%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>color</code></td>
+<td>Marker color for anomalies</td>
+</tr>
+<tr class="even">
+<td><code>marker_symbol</code></td>
+<td>Plotly symbol (e.g., <code>x</code>, <code>circle</code>, <code>diamond</code>)</td>
+</tr>
+<tr class="odd">
+<td><code>marker_size</code></td>
+<td>Marker size</td>
+</tr>
+<tr class="even">
+<td><code>line_width</code></td>
+<td>(Optional) Border width for anomaly markers</td>
+</tr>
+<tr class="odd">
+<td><code>opacity</code></td>
+<td>(Optional) Opacity of anomaly markers</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="summary" class="level1">
+<h1>15. Summary</h1>
+<p>In this tutorial, you learned how to use TSForge’s plot_timeseries() to visualize: - Historical actuals - Forecasts - Prediction intervals - Global &amp; local events - Anomalies - Multiple themes - Three visualization modes</p>
+<p>This function provides a <strong>best-in-class visualization layer</strong> for professional forecasting workflows.</p>
+
+
+<!-- -->
+
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -450,9 +1156,60 @@ ul.task-list li input[type="checkbox"] {
       });
       clipboardModal.on('success', onCopySuccess);
     }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/forecastacademy\.github\.io\/tsforge\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -778,7 +1535,456 @@ ul.task-list li input[type="checkbox"] {
       }
     }
   });
-  </script>
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "plot_timeseries"</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> "TSForge Tutorial — plot_timeseries() Deep Dive"</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 3</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="an">execute:</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co">  echo: true</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="fu"># 1. Introduction</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="in">`plot_timeseries()`</span> is TSForge’s **flagship visualization engine** — a modular, enterprise-grade Plotly interface that supports:</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Overlay, facet, and dropdown views  </span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Hierarchical time series  </span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Global &amp; local events  </span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Anomalies  </span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Forecasts + prediction intervals  </span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Multiple professional themes  </span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Smoothing  </span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Auto-selection of IDs when a dataset is large  </span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>This tutorial walks through the complete workflow using synthetic but realistic data.</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a><span class="fu"># 2. Quick Start</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tsforge.plots.charts <span class="im">import</span> plot_timeseries</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span></span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>fig</span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a><span class="fu"># 3. Architecture Diagram</span></span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a><span class="in">```mermaid</span></span>
+<span id="cb15-50"><a href="#cb15-50" aria-hidden="true" tabindex="-1"></a>flowchart TB</span>
+<span id="cb15-51"><a href="#cb15-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-52"><a href="#cb15-52" aria-hidden="true" tabindex="-1"></a>A[Input DataFrames] --&gt; B[Group / Aggregate]</span>
+<span id="cb15-53"><a href="#cb15-53" aria-hidden="true" tabindex="-1"></a>B --&gt; C[Resample]</span>
+<span id="cb15-54"><a href="#cb15-54" aria-hidden="true" tabindex="-1"></a>C --&gt; D[Select IDs]</span>
+<span id="cb15-55"><a href="#cb15-55" aria-hidden="true" tabindex="-1"></a>D --&gt; E[Smoothing]</span>
+<span id="cb15-56"><a href="#cb15-56" aria-hidden="true" tabindex="-1"></a>E --&gt; F[Merge Events]</span>
+<span id="cb15-57"><a href="#cb15-57" aria-hidden="true" tabindex="-1"></a>F --&gt; G[Normalize Anomalies]</span>
+<span id="cb15-58"><a href="#cb15-58" aria-hidden="true" tabindex="-1"></a>G --&gt; H[Render Mode&lt;br&gt;overlay/facet/dropdown]</span>
+<span id="cb15-59"><a href="#cb15-59" aria-hidden="true" tabindex="-1"></a>H --&gt; I[Theme + Styling]</span>
+<span id="cb15-60"><a href="#cb15-60" aria-hidden="true" tabindex="-1"></a>I --&gt; J[Plotly Figure]</span>
+<span id="cb15-61"><a href="#cb15-61" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-62"><a href="#cb15-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-63"><a href="#cb15-63" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb15-64"><a href="#cb15-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-65"><a href="#cb15-65" aria-hidden="true" tabindex="-1"></a><span class="fu"># 4. Load Libraries</span></span>
+<span id="cb15-66"><a href="#cb15-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-67"><a href="#cb15-67" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-68"><a href="#cb15-68" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb15-69"><a href="#cb15-69" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb15-70"><a href="#cb15-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-71"><a href="#cb15-71" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tsforge.plots.charts <span class="im">import</span> plot_timeseries</span>
+<span id="cb15-72"><a href="#cb15-72" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tsforge.plots.core.theme <span class="im">import</span> THEMES</span>
+<span id="cb15-73"><a href="#cb15-73" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-74"><a href="#cb15-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-75"><a href="#cb15-75" aria-hidden="true" tabindex="-1"></a><span class="fu"># 5. Build a Hierarhical Dataset.</span></span>
+<span id="cb15-76"><a href="#cb15-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-77"><a href="#cb15-77" aria-hidden="true" tabindex="-1"></a>Most forecasting datasets include levels such as:</span>
+<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Department</span>
+<span id="cb15-79"><a href="#cb15-79" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Item</span>
+<span id="cb15-80"><a href="#cb15-80" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Store</span>
+<span id="cb15-81"><a href="#cb15-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-82"><a href="#cb15-82" aria-hidden="true" tabindex="-1"></a>Below we construct a dataset with:</span>
+<span id="cb15-83"><a href="#cb15-83" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>unique_id — BEV_1, BEV_2, SNK_1, SNK_2</span>
+<span id="cb15-84"><a href="#cb15-84" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>department — BEV or SNK</span>
+<span id="cb15-85"><a href="#cb15-85" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>ds — date</span>
+<span id="cb15-86"><a href="#cb15-86" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>y — actual daily sales</span>
+<span id="cb15-87"><a href="#cb15-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-88"><a href="#cb15-88" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-89"><a href="#cb15-89" aria-hidden="true" tabindex="-1"></a>dates <span class="op">=</span> pd.date_range(<span class="st">"2022-01-01"</span>, periods<span class="op">=</span><span class="dv">120</span>, freq<span class="op">=</span><span class="st">"D"</span>)</span>
+<span id="cb15-90"><a href="#cb15-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-91"><a href="#cb15-91" aria-hidden="true" tabindex="-1"></a>departments <span class="op">=</span> [<span class="st">"BEV"</span>, <span class="st">"SNK"</span>]</span>
+<span id="cb15-92"><a href="#cb15-92" aria-hidden="true" tabindex="-1"></a>items <span class="op">=</span> [<span class="st">"1"</span>, <span class="st">"2"</span>]</span>
+<span id="cb15-93"><a href="#cb15-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-94"><a href="#cb15-94" aria-hidden="true" tabindex="-1"></a>actuals <span class="op">=</span> []</span>
+<span id="cb15-95"><a href="#cb15-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-96"><a href="#cb15-96" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> dept <span class="kw">in</span> departments:</span>
+<span id="cb15-97"><a href="#cb15-97" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> item <span class="kw">in</span> items:</span>
+<span id="cb15-98"><a href="#cb15-98" aria-hidden="true" tabindex="-1"></a>        uid <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>dept<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>item<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb15-99"><a href="#cb15-99" aria-hidden="true" tabindex="-1"></a>        lam <span class="op">=</span> <span class="dv">40</span> <span class="cf">if</span> dept <span class="op">==</span> <span class="st">"BEV"</span> <span class="cf">else</span> <span class="dv">25</span></span>
+<span id="cb15-100"><a href="#cb15-100" aria-hidden="true" tabindex="-1"></a>        y <span class="op">=</span> np.random.poisson(lam<span class="op">=</span>lam, size<span class="op">=</span><span class="bu">len</span>(dates))</span>
+<span id="cb15-101"><a href="#cb15-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-102"><a href="#cb15-102" aria-hidden="true" tabindex="-1"></a>        df_tmp <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb15-103"><a href="#cb15-103" aria-hidden="true" tabindex="-1"></a>            <span class="st">"unique_id"</span>: uid,</span>
+<span id="cb15-104"><a href="#cb15-104" aria-hidden="true" tabindex="-1"></a>            <span class="st">"department"</span>: dept,</span>
+<span id="cb15-105"><a href="#cb15-105" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ds"</span>: dates,</span>
+<span id="cb15-106"><a href="#cb15-106" aria-hidden="true" tabindex="-1"></a>            <span class="st">"y"</span>: y</span>
+<span id="cb15-107"><a href="#cb15-107" aria-hidden="true" tabindex="-1"></a>        })</span>
+<span id="cb15-108"><a href="#cb15-108" aria-hidden="true" tabindex="-1"></a>        actuals.append(df_tmp)</span>
+<span id="cb15-109"><a href="#cb15-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-110"><a href="#cb15-110" aria-hidden="true" tabindex="-1"></a>df_actuals <span class="op">=</span> pd.concat(actuals).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-111"><a href="#cb15-111" aria-hidden="true" tabindex="-1"></a>df_actuals.head()</span>
+<span id="cb15-112"><a href="#cb15-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-113"><a href="#cb15-113" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-114"><a href="#cb15-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-115"><a href="#cb15-115" aria-hidden="true" tabindex="-1"></a><span class="fu"># 6. Create a Forecast Dataset</span></span>
+<span id="cb15-116"><a href="#cb15-116" aria-hidden="true" tabindex="-1"></a>Forecasts must match the identifiers in <span class="in">`df_actuals`</span>.</span>
+<span id="cb15-117"><a href="#cb15-117" aria-hidden="true" tabindex="-1"></a>We simulate a simple uplift-based forecast with 80% and 95% prediction intervals.</span>
+<span id="cb15-118"><a href="#cb15-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-119"><a href="#cb15-119" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-120"><a href="#cb15-120" aria-hidden="true" tabindex="-1"></a>df_fcst <span class="op">=</span> (</span>
+<span id="cb15-121"><a href="#cb15-121" aria-hidden="true" tabindex="-1"></a>    df_actuals</span>
+<span id="cb15-122"><a href="#cb15-122" aria-hidden="true" tabindex="-1"></a>    .copy()</span>
+<span id="cb15-123"><a href="#cb15-123" aria-hidden="true" tabindex="-1"></a>    .assign(</span>
+<span id="cb15-124"><a href="#cb15-124" aria-hidden="true" tabindex="-1"></a>        ds<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"ds"</span>] <span class="op">+</span> pd.Timedelta(days<span class="op">=</span><span class="dv">7</span>),</span>
+<span id="cb15-125"><a href="#cb15-125" aria-hidden="true" tabindex="-1"></a>        yhat<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"y"</span>] <span class="op">*</span> <span class="fl">1.05</span>,</span>
+<span id="cb15-126"><a href="#cb15-126" aria-hidden="true" tabindex="-1"></a>        yhat_lo_80<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">0.90</span>,</span>
+<span id="cb15-127"><a href="#cb15-127" aria-hidden="true" tabindex="-1"></a>        yhat_hi_80<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">1.10</span>,</span>
+<span id="cb15-128"><a href="#cb15-128" aria-hidden="true" tabindex="-1"></a>        yhat_lo_95<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">0.80</span>,</span>
+<span id="cb15-129"><a href="#cb15-129" aria-hidden="true" tabindex="-1"></a>        yhat_hi_95<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="st">"yhat"</span>] <span class="op">*</span> <span class="fl">1.20</span>,</span>
+<span id="cb15-130"><a href="#cb15-130" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-131"><a href="#cb15-131" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-132"><a href="#cb15-132" aria-hidden="true" tabindex="-1"></a>df_fcst.head()</span>
+<span id="cb15-133"><a href="#cb15-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-134"><a href="#cb15-134" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-135"><a href="#cb15-135" aria-hidden="true" tabindex="-1"></a>Prediction intervals are essential for inventory safety stock, risk assessment, and replenishment planning.</span>
+<span id="cb15-136"><a href="#cb15-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-137"><a href="#cb15-137" aria-hidden="true" tabindex="-1"></a><span class="fu"># 7. Global Events</span></span>
+<span id="cb15-138"><a href="#cb15-138" aria-hidden="true" tabindex="-1"></a>Global events apply to all series.</span>
+<span id="cb15-139"><a href="#cb15-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-140"><a href="#cb15-140" aria-hidden="true" tabindex="-1"></a>Examples:</span>
+<span id="cb15-141"><a href="#cb15-141" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Holidays</span>
+<span id="cb15-142"><a href="#cb15-142" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Company-wide promotions</span>
+<span id="cb15-143"><a href="#cb15-143" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Weather disruptions affecting supply chain</span>
+<span id="cb15-144"><a href="#cb15-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-145"><a href="#cb15-145" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-146"><a href="#cb15-146" aria-hidden="true" tabindex="-1"></a>events_global <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb15-147"><a href="#cb15-147" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ds"</span>: [<span class="st">"2022-02-14"</span>, <span class="st">"2022-05-30"</span>],</span>
+<span id="cb15-148"><a href="#cb15-148" aria-hidden="true" tabindex="-1"></a>    <span class="st">"event"</span>: [<span class="st">"Valentine's Day"</span>, <span class="st">"Memorial Day"</span>]</span>
+<span id="cb15-149"><a href="#cb15-149" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb15-150"><a href="#cb15-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-151"><a href="#cb15-151" aria-hidden="true" tabindex="-1"></a>events_global[<span class="st">"ds"</span>] <span class="op">=</span> pd.to_datetime(events_global[<span class="st">"ds"</span>])</span>
+<span id="cb15-152"><a href="#cb15-152" aria-hidden="true" tabindex="-1"></a>events_global</span>
+<span id="cb15-153"><a href="#cb15-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-154"><a href="#cb15-154" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-155"><a href="#cb15-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-156"><a href="#cb15-156" aria-hidden="true" tabindex="-1"></a><span class="fu"># 8. Local Events (Per-ID)</span></span>
+<span id="cb15-157"><a href="#cb15-157" aria-hidden="true" tabindex="-1"></a>Local events apply only to a specific item or department.</span>
+<span id="cb15-158"><a href="#cb15-158" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-159"><a href="#cb15-159" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-160"><a href="#cb15-160" aria-hidden="true" tabindex="-1"></a>events_local <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb15-161"><a href="#cb15-161" aria-hidden="true" tabindex="-1"></a>    <span class="st">"unique_id"</span>: [<span class="st">"BEV_2"</span>, <span class="st">"BEV_2"</span>],</span>
+<span id="cb15-162"><a href="#cb15-162" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ds"</span>: [<span class="st">"2022-03-10"</span>, <span class="st">"2022-06-01"</span>],</span>
+<span id="cb15-163"><a href="#cb15-163" aria-hidden="true" tabindex="-1"></a>    <span class="st">"event"</span>: [<span class="st">"Packaging Change"</span>, <span class="st">"Shelf Reset"</span>]</span>
+<span id="cb15-164"><a href="#cb15-164" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb15-165"><a href="#cb15-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-166"><a href="#cb15-166" aria-hidden="true" tabindex="-1"></a>events_local[<span class="st">"ds"</span>] <span class="op">=</span> pd.to_datetime(events_local[<span class="st">"ds"</span>])</span>
+<span id="cb15-167"><a href="#cb15-167" aria-hidden="true" tabindex="-1"></a>events_local</span>
+<span id="cb15-168"><a href="#cb15-168" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-169"><a href="#cb15-169" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-170"><a href="#cb15-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-171"><a href="#cb15-171" aria-hidden="true" tabindex="-1"></a><span class="fu"># 9. Anomalies</span></span>
+<span id="cb15-172"><a href="#cb15-172" aria-hidden="true" tabindex="-1"></a>An anomaly dataset can be generated from:</span>
+<span id="cb15-173"><a href="#cb15-173" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Outlier detection</span>
+<span id="cb15-174"><a href="#cb15-174" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>QC rules</span>
+<span id="cb15-175"><a href="#cb15-175" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Unusually high/low sales</span>
+<span id="cb15-176"><a href="#cb15-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-177"><a href="#cb15-177" aria-hidden="true" tabindex="-1"></a>TSForge expects:</span>
+<span id="cb15-178"><a href="#cb15-178" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>unique_id</span>
+<span id="cb15-179"><a href="#cb15-179" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>ds</span>
+<span id="cb15-180"><a href="#cb15-180" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>flag column (default: anom_flag)</span>
+<span id="cb15-181"><a href="#cb15-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-182"><a href="#cb15-182" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-183"><a href="#cb15-183" aria-hidden="true" tabindex="-1"></a>anoms_df <span class="op">=</span> (</span>
+<span id="cb15-184"><a href="#cb15-184" aria-hidden="true" tabindex="-1"></a>    df_actuals.sample(<span class="dv">8</span>)</span>
+<span id="cb15-185"><a href="#cb15-185" aria-hidden="true" tabindex="-1"></a>    .assign(anom_flag<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb15-186"><a href="#cb15-186" aria-hidden="true" tabindex="-1"></a>    .loc[:, [<span class="st">"unique_id"</span>, <span class="st">"ds"</span>, <span class="st">"anom_flag"</span>]]</span>
+<span id="cb15-187"><a href="#cb15-187" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-188"><a href="#cb15-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-189"><a href="#cb15-189" aria-hidden="true" tabindex="-1"></a>anoms_df.head()</span>
+<span id="cb15-190"><a href="#cb15-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-191"><a href="#cb15-191" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-192"><a href="#cb15-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-193"><a href="#cb15-193" aria-hidden="true" tabindex="-1"></a><span class="fu"># 10. Basic Overlay Plotly</span></span>
+<span id="cb15-194"><a href="#cb15-194" aria-hidden="true" tabindex="-1"></a>The overlay mode plots all selected series together.</span>
+<span id="cb15-195"><a href="#cb15-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-196"><a href="#cb15-196" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-197"><a href="#cb15-197" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb15-198"><a href="#cb15-198" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb15-199"><a href="#cb15-199" aria-hidden="true" tabindex="-1"></a>    forecast<span class="op">=</span>df_fcst,</span>
+<span id="cb15-200"><a href="#cb15-200" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-201"><a href="#cb15-201" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-202"><a href="#cb15-202" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb15-203"><a href="#cb15-203" aria-hidden="true" tabindex="-1"></a>    level<span class="op">=</span>[<span class="dv">80</span>, <span class="dv">95</span>],</span>
+<span id="cb15-204"><a href="#cb15-204" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb15-205"><a href="#cb15-205" aria-hidden="true" tabindex="-1"></a>    events_local<span class="op">=</span>events_local,</span>
+<span id="cb15-206"><a href="#cb15-206" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb15-207"><a href="#cb15-207" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"overlay"</span>,</span>
+<span id="cb15-208"><a href="#cb15-208" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"fa"</span>,</span>
+<span id="cb15-209"><a href="#cb15-209" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-210"><a href="#cb15-210" aria-hidden="true" tabindex="-1"></a>fig</span>
+<span id="cb15-211"><a href="#cb15-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-212"><a href="#cb15-212" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-213"><a href="#cb15-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-214"><a href="#cb15-214" aria-hidden="true" tabindex="-1"></a><span class="fu"># 11. Faceted Small Multiples</span></span>
+<span id="cb15-215"><a href="#cb15-215" aria-hidden="true" tabindex="-1"></a>Great for diagnostic inspection across many IDs.</span>
+<span id="cb15-216"><a href="#cb15-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-217"><a href="#cb15-217" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-218"><a href="#cb15-218" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb15-219"><a href="#cb15-219" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb15-220"><a href="#cb15-220" aria-hidden="true" tabindex="-1"></a>    forecast<span class="op">=</span>df_fcst,</span>
+<span id="cb15-221"><a href="#cb15-221" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-222"><a href="#cb15-222" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-223"><a href="#cb15-223" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb15-224"><a href="#cb15-224" aria-hidden="true" tabindex="-1"></a>    level<span class="op">=</span>[<span class="dv">80</span>, <span class="dv">95</span>],</span>
+<span id="cb15-225"><a href="#cb15-225" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb15-226"><a href="#cb15-226" aria-hidden="true" tabindex="-1"></a>    events_local<span class="op">=</span>events_local,</span>
+<span id="cb15-227"><a href="#cb15-227" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb15-228"><a href="#cb15-228" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"facet"</span>,</span>
+<span id="cb15-229"><a href="#cb15-229" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"mckinsey"</span>,</span>
+<span id="cb15-230"><a href="#cb15-230" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-231"><a href="#cb15-231" aria-hidden="true" tabindex="-1"></a>fig</span>
+<span id="cb15-232"><a href="#cb15-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-233"><a href="#cb15-233" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-234"><a href="#cb15-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-235"><a href="#cb15-235" aria-hidden="true" tabindex="-1"></a><span class="fu"># 12. Dropdown Mode (Interactive Selector)</span></span>
+<span id="cb15-236"><a href="#cb15-236" aria-hidden="true" tabindex="-1"></a>Dropdown mode reduces visual clutter when many IDs exist.</span>
+<span id="cb15-237"><a href="#cb15-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-238"><a href="#cb15-238" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-239"><a href="#cb15-239" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb15-240"><a href="#cb15-240" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb15-241"><a href="#cb15-241" aria-hidden="true" tabindex="-1"></a>    forecast<span class="op">=</span>df_fcst,</span>
+<span id="cb15-242"><a href="#cb15-242" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-243"><a href="#cb15-243" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-244"><a href="#cb15-244" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb15-245"><a href="#cb15-245" aria-hidden="true" tabindex="-1"></a>    level<span class="op">=</span>[<span class="dv">80</span>, <span class="dv">95</span>],</span>
+<span id="cb15-246"><a href="#cb15-246" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb15-247"><a href="#cb15-247" aria-hidden="true" tabindex="-1"></a>    events_local<span class="op">=</span>events_local,</span>
+<span id="cb15-248"><a href="#cb15-248" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb15-249"><a href="#cb15-249" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"dropdown"</span>,</span>
+<span id="cb15-250"><a href="#cb15-250" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"minimal"</span>,</span>
+<span id="cb15-251"><a href="#cb15-251" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-252"><a href="#cb15-252" aria-hidden="true" tabindex="-1"></a>fig</span>
+<span id="cb15-253"><a href="#cb15-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-254"><a href="#cb15-254" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-255"><a href="#cb15-255" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-256"><a href="#cb15-256" aria-hidden="true" tabindex="-1"></a><span class="fu"># 13. Styling Options</span></span>
+<span id="cb15-257"><a href="#cb15-257" aria-hidden="true" tabindex="-1"></a>The dark theme is optimized for:</span>
+<span id="cb15-258"><a href="#cb15-258" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Presentations</span>
+<span id="cb15-259"><a href="#cb15-259" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Videos</span>
+<span id="cb15-260"><a href="#cb15-260" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Demos</span>
+<span id="cb15-261"><a href="#cb15-261" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>High-contrast environments</span>
+<span id="cb15-262"><a href="#cb15-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-263"><a href="#cb15-263" aria-hidden="true" tabindex="-1"></a><span class="fu"># Plot Styling</span></span>
+<span id="cb15-264"><a href="#cb15-264" aria-hidden="true" tabindex="-1"></a>TSForge provides a simple, clean way to customize titles, subtitles, axis labels, and layout elements using the <span class="in">`style`</span> dictionary.</span>
+<span id="cb15-265"><a href="#cb15-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-266"><a href="#cb15-266" aria-hidden="true" tabindex="-1"></a>This allows you to override theme defaults without touching Plotly directly.</span>
+<span id="cb15-267"><a href="#cb15-267" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-268"><a href="#cb15-268" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb15-269"><a href="#cb15-269" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb15-270"><a href="#cb15-270" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-271"><a href="#cb15-271" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-272"><a href="#cb15-272" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb15-273"><a href="#cb15-273" aria-hidden="true" tabindex="-1"></a>    style<span class="op">=</span>{</span>
+<span id="cb15-274"><a href="#cb15-274" aria-hidden="true" tabindex="-1"></a>        <span class="st">"title"</span>: <span class="st">"Demand With Forecast"</span>,</span>
+<span id="cb15-275"><a href="#cb15-275" aria-hidden="true" tabindex="-1"></a>        <span class="st">"subtitle"</span>: <span class="st">"Styled using the TSForge 'style' dictionary"</span>,</span>
+<span id="cb15-276"><a href="#cb15-276" aria-hidden="true" tabindex="-1"></a>        <span class="st">"x_title"</span>: <span class="st">"Date"</span>,</span>
+<span id="cb15-277"><a href="#cb15-277" aria-hidden="true" tabindex="-1"></a>        <span class="st">"y_title"</span>: <span class="st">"Units Sold"</span>,</span>
+<span id="cb15-278"><a href="#cb15-278" aria-hidden="true" tabindex="-1"></a>        <span class="st">"font_size"</span>: <span class="dv">14</span>,</span>
+<span id="cb15-279"><a href="#cb15-279" aria-hidden="true" tabindex="-1"></a>        <span class="st">"background"</span>: <span class="st">"white"</span>,</span>
+<span id="cb15-280"><a href="#cb15-280" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb15-281"><a href="#cb15-281" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"fa"</span>,</span>
+<span id="cb15-282"><a href="#cb15-282" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-283"><a href="#cb15-283" aria-hidden="true" tabindex="-1"></a>fig</span>
+<span id="cb15-284"><a href="#cb15-284" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-285"><a href="#cb15-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-286"><a href="#cb15-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-287"><a href="#cb15-287" aria-hidden="true" tabindex="-1"></a><span class="fu">## Event Styling</span></span>
+<span id="cb15-288"><a href="#cb15-288" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-289"><a href="#cb15-289" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-290"><a href="#cb15-290" aria-hidden="true" tabindex="-1"></a>events_config <span class="op">=</span> {</span>
+<span id="cb15-291"><a href="#cb15-291" aria-hidden="true" tabindex="-1"></a>  <span class="st">"color"</span>: <span class="st">"#444"</span>,</span>
+<span id="cb15-292"><a href="#cb15-292" aria-hidden="true" tabindex="-1"></a>  <span class="st">"opacity"</span>: <span class="fl">0.85</span>,</span>
+<span id="cb15-293"><a href="#cb15-293" aria-hidden="true" tabindex="-1"></a>  <span class="st">"stagger_labels"</span>: <span class="va">True</span></span>
+<span id="cb15-294"><a href="#cb15-294" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-295"><a href="#cb15-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-296"><a href="#cb15-296" aria-hidden="true" tabindex="-1"></a>plot_timeseries(</span>
+<span id="cb15-297"><a href="#cb15-297" aria-hidden="true" tabindex="-1"></a>  df_actuals,</span>
+<span id="cb15-298"><a href="#cb15-298" aria-hidden="true" tabindex="-1"></a>  id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-299"><a href="#cb15-299" aria-hidden="true" tabindex="-1"></a>  date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-300"><a href="#cb15-300" aria-hidden="true" tabindex="-1"></a>  value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb15-301"><a href="#cb15-301" aria-hidden="true" tabindex="-1"></a>  events_global<span class="op">=</span>events_global,</span>
+<span id="cb15-302"><a href="#cb15-302" aria-hidden="true" tabindex="-1"></a>  events_config<span class="op">=</span>events_config,</span>
+<span id="cb15-303"><a href="#cb15-303" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-304"><a href="#cb15-304" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-305"><a href="#cb15-305" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-306"><a href="#cb15-306" aria-hidden="true" tabindex="-1"></a><span class="fu">## Anomaly Styling</span></span>
+<span id="cb15-307"><a href="#cb15-307" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb15-308"><a href="#cb15-308" aria-hidden="true" tabindex="-1"></a>plot_timeseries(</span>
+<span id="cb15-309"><a href="#cb15-309" aria-hidden="true" tabindex="-1"></a>  df_actuals,</span>
+<span id="cb15-310"><a href="#cb15-310" aria-hidden="true" tabindex="-1"></a>  id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-311"><a href="#cb15-311" aria-hidden="true" tabindex="-1"></a>  date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-312"><a href="#cb15-312" aria-hidden="true" tabindex="-1"></a>  value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb15-313"><a href="#cb15-313" aria-hidden="true" tabindex="-1"></a>  anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb15-314"><a href="#cb15-314" aria-hidden="true" tabindex="-1"></a>  anomalies_config<span class="op">=</span>{</span>
+<span id="cb15-315"><a href="#cb15-315" aria-hidden="true" tabindex="-1"></a>    <span class="st">"color"</span>: <span class="st">"crimson"</span>,</span>
+<span id="cb15-316"><a href="#cb15-316" aria-hidden="true" tabindex="-1"></a>    <span class="st">"marker_symbol"</span>: <span class="st">"x"</span>,</span>
+<span id="cb15-317"><a href="#cb15-317" aria-hidden="true" tabindex="-1"></a>    <span class="st">"marker_size"</span>: <span class="dv">10</span></span>
+<span id="cb15-318"><a href="#cb15-318" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb15-319"><a href="#cb15-319" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-320"><a href="#cb15-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-321"><a href="#cb15-321" aria-hidden="true" tabindex="-1"></a><span class="co">## Theme Styling</span></span>
+<span id="cb15-322"><a href="#cb15-322" aria-hidden="true" tabindex="-1"></a>```python</span>
+<span id="cb15-323"><a href="#cb15-323" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plot_timeseries(</span>
+<span id="cb15-324"><a href="#cb15-324" aria-hidden="true" tabindex="-1"></a>    df<span class="op">=</span>df_actuals,</span>
+<span id="cb15-325"><a href="#cb15-325" aria-hidden="true" tabindex="-1"></a>    id_col<span class="op">=</span><span class="st">"unique_id"</span>,</span>
+<span id="cb15-326"><a href="#cb15-326" aria-hidden="true" tabindex="-1"></a>    date_col<span class="op">=</span><span class="st">"ds"</span>,</span>
+<span id="cb15-327"><a href="#cb15-327" aria-hidden="true" tabindex="-1"></a>    value_col<span class="op">=</span><span class="st">"y"</span>,</span>
+<span id="cb15-328"><a href="#cb15-328" aria-hidden="true" tabindex="-1"></a>    events_global<span class="op">=</span>events_global,</span>
+<span id="cb15-329"><a href="#cb15-329" aria-hidden="true" tabindex="-1"></a>    anomalies<span class="op">=</span>anoms_df,</span>
+<span id="cb15-330"><a href="#cb15-330" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"overlay"</span>,</span>
+<span id="cb15-331"><a href="#cb15-331" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">=</span><span class="st">"dark"</span>,</span>
+<span id="cb15-332"><a href="#cb15-332" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-333"><a href="#cb15-333" aria-hidden="true" tabindex="-1"></a>fig</span>
+<span id="cb15-334"><a href="#cb15-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-335"><a href="#cb15-335" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-336"><a href="#cb15-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-337"><a href="#cb15-337" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-338"><a href="#cb15-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-339"><a href="#cb15-339" aria-hidden="true" tabindex="-1"></a><span class="fu"># 14. Parameter Reference</span></span>
+<span id="cb15-340"><a href="#cb15-340" aria-hidden="true" tabindex="-1"></a><span class="fu">## Core Inputs</span></span>
+<span id="cb15-341"><a href="#cb15-341" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-342"><a href="#cb15-342" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Parameter <span class="pp">|</span> Description <span class="pp">|</span></span>
+<span id="cb15-343"><a href="#cb15-343" aria-hidden="true" tabindex="-1"></a><span class="pp">|----------|-------------|</span></span>
+<span id="cb15-344"><a href="#cb15-344" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`df`</span> <span class="pp">|</span> Input actuals DataFrame. <span class="pp">|</span></span>
+<span id="cb15-345"><a href="#cb15-345" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`id_col`</span> <span class="pp">|</span> Column identifying unique series (e.g., item/store). <span class="pp">|</span></span>
+<span id="cb15-346"><a href="#cb15-346" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`date_col`</span> <span class="pp">|</span> Timestamp column (must be coercible to datetime). <span class="pp">|</span></span>
+<span id="cb15-347"><a href="#cb15-347" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`value_col`</span> <span class="pp">|</span> Actual observed target column. <span class="pp">|</span></span>
+<span id="cb15-348"><a href="#cb15-348" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-349"><a href="#cb15-349" aria-hidden="true" tabindex="-1"></a><span class="fu">### Optional Inputs — Forecasts</span></span>
+<span id="cb15-350"><a href="#cb15-350" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-351"><a href="#cb15-351" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Parameter <span class="pp">|</span> Description <span class="pp">|</span></span>
+<span id="cb15-352"><a href="#cb15-352" aria-hidden="true" tabindex="-1"></a><span class="pp">|----------|-------------|</span></span>
+<span id="cb15-353"><a href="#cb15-353" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`forecast`</span> <span class="pp">|</span> Forecast DataFrame containing <span class="in">`yhat`</span> and prediction interval columns. <span class="pp">|</span></span>
+<span id="cb15-354"><a href="#cb15-354" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`forecast_value_col`</span> <span class="pp">|</span> Name of the point forecast column (default: <span class="in">`yhat`</span>). <span class="pp">|</span></span>
+<span id="cb15-355"><a href="#cb15-355" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`level`</span> <span class="pp">|</span> List of uncertainty interval levels (e.g., <span class="in">`[80, 95]`</span>). <span class="pp">|</span></span>
+<span id="cb15-356"><a href="#cb15-356" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`lo_pattern`</span> <span class="pp">|</span> Pattern for lower PI column names. <span class="pp">|</span></span>
+<span id="cb15-357"><a href="#cb15-357" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`hi_pattern`</span> <span class="pp">|</span> Pattern for upper PI column names. <span class="pp">|</span></span>
+<span id="cb15-358"><a href="#cb15-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-359"><a href="#cb15-359" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-360"><a href="#cb15-360" aria-hidden="true" tabindex="-1"></a><span class="fu">## Events </span></span>
+<span id="cb15-361"><a href="#cb15-361" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-362"><a href="#cb15-362" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Parameter <span class="pp">|</span> Meaning <span class="pp">|</span></span>
+<span id="cb15-363"><a href="#cb15-363" aria-hidden="true" tabindex="-1"></a><span class="pp">|----------|---------|</span></span>
+<span id="cb15-364"><a href="#cb15-364" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`events_global`</span> <span class="pp">|</span> Events that apply to **all** series. <span class="pp">|</span></span>
+<span id="cb15-365"><a href="#cb15-365" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`events_local`</span> <span class="pp">|</span> Events tied to a specific <span class="in">`unique_id`</span>. <span class="pp">|</span></span>
+<span id="cb15-366"><a href="#cb15-366" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`events`</span> <span class="pp">|</span> Inline event column in <span class="in">`df`</span> (boolean/string). <span class="pp">|</span></span>
+<span id="cb15-367"><a href="#cb15-367" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`anomalies`</span> <span class="pp">|</span> Either a column name or a DataFrame of anomaly flags. <span class="pp">|</span></span>
+<span id="cb15-368"><a href="#cb15-368" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`anomaly_flag_value`</span> <span class="pp">|</span> Value representing anomaly when using inline flag. <span class="pp">|</span></span>
+<span id="cb15-369"><a href="#cb15-369" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-370"><a href="#cb15-370" aria-hidden="true" tabindex="-1"></a><span class="fu">## Anomalies</span></span>
+<span id="cb15-371"><a href="#cb15-371" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Parameter <span class="pp">|</span> Description <span class="pp">|</span></span>
+<span id="cb15-372"><a href="#cb15-372" aria-hidden="true" tabindex="-1"></a><span class="pp">|----------|-------------|</span></span>
+<span id="cb15-373"><a href="#cb15-373" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`anomalies`</span> <span class="pp">|</span> Either a column name or a DataFrame of anomaly flags. <span class="pp">|</span></span>
+<span id="cb15-374"><a href="#cb15-374" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`anomaly_flag_value`</span> <span class="pp">|</span> Value representing anomaly when using inline flag. <span class="pp">|</span></span>
+<span id="cb15-375"><a href="#cb15-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-376"><a href="#cb15-376" aria-hidden="true" tabindex="-1"></a><span class="fu">## Rendering</span></span>
+<span id="cb15-377"><a href="#cb15-377" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-378"><a href="#cb15-378" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Parameter <span class="pp">|</span> Description <span class="pp">|</span></span>
+<span id="cb15-379"><a href="#cb15-379" aria-hidden="true" tabindex="-1"></a><span class="pp">|----------|-------------|</span></span>
+<span id="cb15-380"><a href="#cb15-380" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`theme`</span> <span class="pp">|</span> fa / mckinsey / minimal / dark <span class="pp">|</span></span>
+<span id="cb15-381"><a href="#cb15-381" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`smooth_window`</span> <span class="pp">|</span> Moving window smoother <span class="pp">|</span></span>
+<span id="cb15-382"><a href="#cb15-382" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`style`</span> <span class="pp">|</span> Title + axis labels <span class="pp">|</span></span>
+<span id="cb15-383"><a href="#cb15-383" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-384"><a href="#cb15-384" aria-hidden="true" tabindex="-1"></a><span class="fu">## Modes</span></span>
+<span id="cb15-385"><a href="#cb15-385" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-386"><a href="#cb15-386" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Mode <span class="pp">|</span> Description <span class="pp">|</span></span>
+<span id="cb15-387"><a href="#cb15-387" aria-hidden="true" tabindex="-1"></a><span class="pp">|------|-------------|</span></span>
+<span id="cb15-388"><a href="#cb15-388" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`overlay`</span> <span class="pp">|</span> All series plotted on one set of axes. <span class="pp">|</span></span>
+<span id="cb15-389"><a href="#cb15-389" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`facet`</span> <span class="pp">|</span> Small multiples (one series per subplot). <span class="pp">|</span></span>
+<span id="cb15-390"><a href="#cb15-390" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`dropdown`</span> <span class="pp">|</span> Single view with an interactive selector. <span class="pp">|</span></span>
+<span id="cb15-391"><a href="#cb15-391" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-392"><a href="#cb15-392" aria-hidden="true" tabindex="-1"></a><span class="fu">## Themes</span></span>
+<span id="cb15-393"><a href="#cb15-393" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-394"><a href="#cb15-394" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Theme <span class="pp">|</span> Description <span class="pp">|</span></span>
+<span id="cb15-395"><a href="#cb15-395" aria-hidden="true" tabindex="-1"></a><span class="pp">|--------|-------------|</span></span>
+<span id="cb15-396"><a href="#cb15-396" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`fa`</span> <span class="pp">|</span> Forecast Academy brand (default). <span class="pp">|</span></span>
+<span id="cb15-397"><a href="#cb15-397" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`mckinsey`</span> <span class="pp">|</span> Consulting-grade clean style. <span class="pp">|</span></span>
+<span id="cb15-398"><a href="#cb15-398" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`minimal`</span> <span class="pp">|</span> Scandinavian-style simplicity. <span class="pp">|</span></span>
+<span id="cb15-399"><a href="#cb15-399" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`dark`</span> <span class="pp">|</span> High-contrast dark mode optimized for demos. <span class="pp">|</span></span>
+<span id="cb15-400"><a href="#cb15-400" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-401"><a href="#cb15-401" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-402"><a href="#cb15-402" aria-hidden="true" tabindex="-1"></a><span class="fu">## Styling, Themes, &amp; Titles</span></span>
+<span id="cb15-403"><a href="#cb15-403" aria-hidden="true" tabindex="-1"></a><span class="fu">### General Styling (`style=`)</span></span>
+<span id="cb15-404"><a href="#cb15-404" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Key          <span class="pp">|</span> Description                                    <span class="pp">|</span></span>
+<span id="cb15-405"><a href="#cb15-405" aria-hidden="true" tabindex="-1"></a><span class="pp">|--------------|------------------------------------------------|</span></span>
+<span id="cb15-406"><a href="#cb15-406" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`title`</span>      <span class="pp">|</span> Main chart title                               <span class="pp">|</span></span>
+<span id="cb15-407"><a href="#cb15-407" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`subtitle`</span>   <span class="pp">|</span> Secondary subtitle shown above the plot        <span class="pp">|</span></span>
+<span id="cb15-408"><a href="#cb15-408" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`x_title`</span>    <span class="pp">|</span> X-axis label                                   <span class="pp">|</span></span>
+<span id="cb15-409"><a href="#cb15-409" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`y_title`</span>    <span class="pp">|</span> Y-axis label                                   <span class="pp">|</span></span>
+<span id="cb15-410"><a href="#cb15-410" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`font_size`</span>  <span class="pp">|</span> Override theme font size                       <span class="pp">|</span></span>
+<span id="cb15-411"><a href="#cb15-411" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`font_family`</span><span class="pp">|</span> Override theme font                            <span class="pp">|</span></span>
+<span id="cb15-412"><a href="#cb15-412" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`background`</span> <span class="pp">|</span> Plot &amp; paper background override               <span class="pp">|</span></span>
+<span id="cb15-413"><a href="#cb15-413" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-414"><a href="#cb15-414" aria-hidden="true" tabindex="-1"></a><span class="fu">### Styling Events (`events_config=`)</span></span>
+<span id="cb15-415"><a href="#cb15-415" aria-hidden="true" tabindex="-1"></a>You can customize event appearance:</span>
+<span id="cb15-416"><a href="#cb15-416" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-417"><a href="#cb15-417" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Key              <span class="pp">|</span> Description                                        <span class="pp">|</span></span>
+<span id="cb15-418"><a href="#cb15-418" aria-hidden="true" tabindex="-1"></a><span class="pp">|------------------|----------------------------------------------------|</span></span>
+<span id="cb15-419"><a href="#cb15-419" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`color`</span>          <span class="pp">|</span> Vertical event line + label color                  <span class="pp">|</span></span>
+<span id="cb15-420"><a href="#cb15-420" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`opacity`</span>        <span class="pp">|</span> Transparency of vertical event lines               <span class="pp">|</span></span>
+<span id="cb15-421"><a href="#cb15-421" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`stagger_labels`</span> <span class="pp">|</span> Whether to stagger event labels to avoid overlap   <span class="pp">|</span></span>
+<span id="cb15-422"><a href="#cb15-422" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`line_width`</span>     <span class="pp">|</span> (Optional) Width of event lines                    <span class="pp">|</span></span>
+<span id="cb15-423"><a href="#cb15-423" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`label_font_size`</span><span class="pp">|</span> (Optional) Font size of event labels               <span class="pp">|</span></span>
+<span id="cb15-424"><a href="#cb15-424" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-425"><a href="#cb15-425" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-426"><a href="#cb15-426" aria-hidden="true" tabindex="-1"></a><span class="fu">### Styling Anomalies (`anomalies_config=`)</span></span>
+<span id="cb15-427"><a href="#cb15-427" aria-hidden="true" tabindex="-1"></a>Customize anomaly marker appearance:</span>
+<span id="cb15-428"><a href="#cb15-428" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-429"><a href="#cb15-429" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Key             <span class="pp">|</span> Description                                         <span class="pp">|</span></span>
+<span id="cb15-430"><a href="#cb15-430" aria-hidden="true" tabindex="-1"></a><span class="pp">|-----------------|-----------------------------------------------------|</span></span>
+<span id="cb15-431"><a href="#cb15-431" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`color`</span>         <span class="pp">|</span> Marker color for anomalies                          <span class="pp">|</span></span>
+<span id="cb15-432"><a href="#cb15-432" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`marker_symbol`</span> <span class="pp">|</span> Plotly symbol (e.g., <span class="in">`x`</span>, <span class="in">`circle`</span>, <span class="in">`diamond`</span>)      <span class="pp">|</span></span>
+<span id="cb15-433"><a href="#cb15-433" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`marker_size`</span>   <span class="pp">|</span> Marker size                                         <span class="pp">|</span></span>
+<span id="cb15-434"><a href="#cb15-434" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`line_width`</span>    <span class="pp">|</span> (Optional) Border width for anomaly markers         <span class="pp">|</span></span>
+<span id="cb15-435"><a href="#cb15-435" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`opacity`</span>       <span class="pp">|</span> (Optional) Opacity of anomaly markers               <span class="pp">|</span></span>
+<span id="cb15-436"><a href="#cb15-436" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-437"><a href="#cb15-437" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-438"><a href="#cb15-438" aria-hidden="true" tabindex="-1"></a><span class="fu"># 15. Summary</span></span>
+<span id="cb15-439"><a href="#cb15-439" aria-hidden="true" tabindex="-1"></a>In this tutorial, you learned how to use TSForge’s plot_timeseries() to visualize:</span>
+<span id="cb15-440"><a href="#cb15-440" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Historical actuals</span>
+<span id="cb15-441"><a href="#cb15-441" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Forecasts</span>
+<span id="cb15-442"><a href="#cb15-442" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Prediction intervals</span>
+<span id="cb15-443"><a href="#cb15-443" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Global &amp; local events</span>
+<span id="cb15-444"><a href="#cb15-444" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Anomalies</span>
+<span id="cb15-445"><a href="#cb15-445" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Multiple themes</span>
+<span id="cb15-446"><a href="#cb15-446" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Three visualization modes</span>
+<span id="cb15-447"><a href="#cb15-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-448"><a href="#cb15-448" aria-hidden="true" tabindex="-1"></a>This function provides a **best-in-class visualization layer** for professional forecasting workflows.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
 </div> <!-- /content -->
 
 

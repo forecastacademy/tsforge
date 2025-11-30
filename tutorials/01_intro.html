@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Getting Started with tsforge – tsforge</title>
+<title>Getting Started – tsforge</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -273,12 +273,16 @@ ul.task-list li input[type="checkbox"] {
     <a class="dropdown-item" href="../tutorials/01_intro.html">
  <span class="dropdown-text">Getting Started</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../tutorials/plot_timeseries.html">
+ <span class="dropdown-text">Plot Time Series</span></a>
+  </li>  
     </ul>
   </li>
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/your-username/tsforge"> <i class="bi bi-github" role="img" aria-label="GitHub">
+    <a class="nav-link" href="https://github.com/forecastacademy/tsforge"> <i class="bi bi-github" role="img" aria-label="GitHub">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -294,7 +298,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Getting Started with tsforge</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Getting Started</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -336,13 +340,13 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../tutorials/01_intro.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Getting Started with tsforge</span></a>
+ <span class="menu-text">Getting Started</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../tutorials/plot_timeseries.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">plot_timeseries.html</span></a>
+ <span class="menu-text">plot_timeseries</span></a>
   </div>
 </li>
       </ul>
@@ -356,8 +360,9 @@ ul.task-list li input[type="checkbox"] {
         <nav id="TOC" role="doc-toc" class="toc-active">
     <h2 id="toc-title">On this page</h2>
    
-  <ul>
-  <li><a href="#getting-started" id="toc-getting-started" class="nav-link active" data-scroll-target="#getting-started">Getting Started</a></li>
+  <ul class="collapse">
+  <li><a href="#welcome-to-tsforge" id="toc-welcome-to-tsforge" class="nav-link active" data-scroll-target="#welcome-to-tsforge">1. Welcome to TSForge</a></li>
+  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">2. Installation</a></li>
   </ul>
 </nav>
     </div>
@@ -365,9 +370,10 @@ ul.task-list li input[type="checkbox"] {
 <main class="content" id="quarto-document-content">
 
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Getting Started with tsforge</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Tutorials</a></li><li class="breadcrumb-item"><a href="../tutorials/01_intro.html">Getting Started</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Getting Started with tsforge</h1>
+<h1 class="title">Getting Started</h1>
+<p class="subtitle lead">A Practical Introduction to the Forecast Academy Time-Series Toolkit</p>
 </div>
 
 
@@ -384,12 +390,40 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="getting-started" class="level1">
-<h1>Getting Started</h1>
-<p>Here’s a quick demo:</p>
-<p>import matplotlib.pyplot as plt</p>
-<p>sales = [50, 70, 60, 90, 85, 100] months = range(1, 7)</p>
-<p>plt.plot(months, sales, marker=“o”) plt.title(“Monthly Sales Trend”) plt.xlabel(“Month”) plt.ylabel(“Sales”) plt.show()</p>
+<section id="welcome-to-tsforge" class="level1">
+<h1>1. Welcome to TSForge</h1>
+<p>TSForge is a <strong>modern, production-grade forecasting toolkit</strong> designed for:</p>
+<ul>
+<li>Professional forecasters<br>
+</li>
+<li>Data science teams<br>
+</li>
+<li>Enterprise forecasting systems<br>
+</li>
+<li>Students learning forecasting through Forecast Academy</li>
+</ul>
+<p>TSForge includes:</p>
+<ul>
+<li>Cleaning &amp; preprocessing utilities<br>
+</li>
+<li>EDA &amp; diagnostics<br>
+</li>
+<li>Feature engineering<br>
+</li>
+<li>Forecast evaluation<br>
+</li>
+<li><strong>High-grade visualization tools (Plotly-based)</strong><br>
+</li>
+<li>A consistent architecture designed for production and education</li>
+</ul>
+<p>This guide helps you install TSForge, load your first dataset, and run your first visualization.</p>
+<hr>
+</section>
+<section id="installation" class="level1">
+<h1>2. Installation</h1>
+<p><code>TSForge</code> requires <strong>Python 3.9+</strong>.</p>
+<p>Install from your GitHub repo (adjust if needed):</p>
+<p>```bash pip install -e .</p>
 
 
 </section>
@@ -481,7 +515,7 @@ ul.task-list li input[type="checkbox"] {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/forecastacademy\.github\.io\/tsforge\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
