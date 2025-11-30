@@ -237,3 +237,16 @@ body.quarto-dark .navbar a:hover,
 body.quarto-dark .navbar .nav-link:hover {
   color: #66d9ef !important;   /* aqua hover */
 }
+
+/* Fix Plotly modebar overlapping dropdown menus in Quarto */
+.plotly .modebar-container {
+    z-index: 1 !important;   /* Lower priority */
+}
+
+.plotly {
+    z-index: 0 !important;
+}
+
+.plotly .updatemenu-container {
+    z-index: 9999 !important;
+}

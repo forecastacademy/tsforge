@@ -72,7 +72,7 @@
     "href": "tutorials/plot_timeseries.html#event-styling",
     "title": "plot_timeseries",
     "section": "Event Styling",
-    "text": "Event Styling\nevents_config = {\n  \"color\": \"#444\",\n  \"opacity\": 0.85,\n  \"stagger_labels\": True\n}\n\nplot_timeseries(\n  df_actuals,\n  id_col=\"unique_id\",\n  date_col=\"ds\",\n  value_col=\"y\",\n  events_global=events_global,\n  events_config=events_config,\n)",
+    "text": "Event Styling\n\n\nCode\nevents_config = {\n  \"color\": \"#444\",\n  \"opacity\": 0.85,\n  \"stagger_labels\": True\n}\n\nplot_timeseries(\n  df_actuals,\n  id_col=\"unique_id\",\n  date_col=\"ds\",\n  value_col=\"y\",\n  events_global=events_global,\n  events_config=events_config,\n)",
     "crumbs": [
       "Home",
       "Tutorials",
@@ -84,7 +84,19 @@
     "href": "tutorials/plot_timeseries.html#anomaly-styling",
     "title": "plot_timeseries",
     "section": "Anomaly Styling",
-    "text": "Anomaly Styling\nplot_timeseries(\n  df_actuals,\n  id_col=\"unique_id\",\n  date_col=\"ds\",\n  value_col=\"y\",\n  anomalies=anoms_df,\n  anomalies_config={\n    \"color\": \"crimson\",\n    \"marker_symbol\": \"x\",\n    \"marker_size\": 10\n  }\n)\n\n## Theme Styling\n```python\nfig = plot_timeseries(\n    df=df_actuals,\n    id_col=\"unique_id\",\n    date_col=\"ds\",\n    value_col=\"y\",\n    events_global=events_global,\n    anomalies=anoms_df,\n    mode=\"overlay\",\n    theme=\"dark\",\n)\nfig",
+    "text": "Anomaly Styling\n\n\nCode\nplot_timeseries(\n  df_actuals,\n  id_col=\"unique_id\",\n  date_col=\"ds\",\n  value_col=\"y\",\n  anomalies=anoms_df,\n  anomalies_config={\n    \"color\": \"crimson\",\n    \"marker_symbol\": \"x\",\n    \"marker_size\": 10\n  }\n)",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_timeseries"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_timeseries.html#theme-styling",
+    "href": "tutorials/plot_timeseries.html#theme-styling",
+    "title": "plot_timeseries",
+    "section": "Theme Styling",
+    "text": "Theme Styling\n\n\nCode\nfig = plot_timeseries(\n    df=df_actuals,\n    id_col=\"unique_id\",\n    date_col=\"ds\",\n    value_col=\"y\",\n    events_global=events_global,\n    anomalies=anoms_df,\n    mode=\"overlay\",\n    theme=\"dark\",\n)\nfig",
     "crumbs": [
       "Home",
       "Tutorials",
