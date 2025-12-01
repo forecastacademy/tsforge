@@ -1,14 +1,50 @@
 [
   {
-    "objectID": "tutorials/01_intro.html",
-    "href": "tutorials/01_intro.html",
-    "title": "Getting Started",
+    "objectID": "tutorials/plot_seasonal.html",
+    "href": "tutorials/plot_seasonal.html",
+    "title": "plot_seasonal",
     "section": "",
-    "text": "1. Welcome to TSForge\nTSForge is a modern, production-grade forecasting toolkit designed for:\n\nProfessional forecasters\n\nData science teams\n\nEnterprise forecasting systems\n\nStudents learning forecasting through Forecast Academy\n\nTSForge includes:\n\nCleaning & preprocessing utilities\n\nEDA & diagnostics\n\nFeature engineering\n\nForecast evaluation\n\nHigh-grade visualization tools (Plotly-based)\n\nA consistent architecture designed for production and education\n\nThis guide helps you install TSForge, load your first dataset, and run your first visualization.\n\n\n\n2. Installation\nTSForge requires Python 3.9+.\nInstall from your GitHub repo (adjust if needed):\n```bash pip install -e .",
+    "text": "plot_seasonal() is TSForge’s diagnostic visualization engine — designed to reveal the underlying shape, stability, and distribution of seasonal patterns.\nWhile standard line plots show what happened, seasonal plots explain when it happens. This function is critical for answering: - Is there a pattern? (Do sales always spike in Q4?) - Is the pattern stable? (Did the Q4 spike stop happening in 2023?) - Are there anomalies? (Was that March drop normal seasonality or a supply shock?)\nIt supports: - Trend Normalization: Compare seasonal shapes even when sales double year-over-year. - Signal Extraction: Visualize the “True Average Seasonality” overlaid on noisy data. - Boxplot & Line Modes: Switch between distributional views and trajectory views. - Interactive Modes: Overlay, Facet, and Dropdown layouts.",
     "crumbs": [
       "Home",
       "Tutorials",
-      "Getting Started"
+      "plot_seasonal"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_seasonal.html#core-inputs",
+    "href": "tutorials/plot_seasonal.html#core-inputs",
+    "title": "plot_seasonal",
+    "section": "Core Inputs",
+    "text": "Core Inputs\n\n\n\n\n\n\n\n\nParameter\nType\nDescription\n\n\n\n\ndf\npd.DataFrame\nInput dataframe containing time series history.\n\n\nid_col\nstr\nColumn identifying unique series (e.g., item/store).\n\n\ndate_col\nstr\nColumn with datetime values.\n\n\nvalue_col\nstr\nThe metric to plot (e.g., Sales, Calls, Orders).",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_seasonal"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_seasonal.html#analysis-controls",
+    "href": "tutorials/plot_seasonal.html#analysis-controls",
+    "title": "plot_seasonal",
+    "section": "Analysis Controls",
+    "text": "Analysis Controls\n\n\n\n\n\n\n\n\nParameter\nType\nDescription\n\n\n\n\nfreq\nstr\nThe seasonal cycle to plot. Options: \"M\" (Month), \"Q\" (Quarter), \"W\" (Week), \"D\" (Day).\n\n\nnormalize\nbool\nCritical. If True, divides each year’s data by that year’s mean. Removes trend to isolate seasonal shape.\n\n\nshow_mean\nbool\nIf True (and kind=\"line\"), overlays the average seasonal pattern as a bold dashed line.\n\n\nseasonal_agg\nstr\nAggregation function used when collapsing data (default: \"mean\").",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_seasonal"
+    ]
+  },
+  {
+    "objectID": "tutorials/plot_seasonal.html#rendering-styling",
+    "href": "tutorials/plot_seasonal.html#rendering-styling",
+    "title": "plot_seasonal",
+    "section": "Rendering & Styling",
+    "text": "Rendering & Styling\n\n\n\n\n\n\n\n\nParameter\nType\nDescription\n\n\n\n\nkind\nstr\n\"line\" (yearly trajectories) or \"box\" (distributions).\n\n\nmode\nstr\n\"overlay\" (all on one), \"facet\" (small multiples), or \"dropdown\" (interactive).\n\n\nengine\nstr\n\"plotly\" (interactive, default) or \"matplotlib\" (static).\n\n\nids\nlist\nSpecific ID(s) to filter. If None, samples up to 6 random IDs.",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "plot_seasonal"
     ]
   },
   {
@@ -16,7 +52,7 @@
     "href": "index.html",
     "title": "tsforge",
     "section": "",
-    "text": "tsforge is a Python package for building and managing forecasting features.\nIt’s designed to make it easy to:\n\n🏗️ Engineer time series features (lags, rolling stats, seasonalities)\n\n⚡ Scale feature creation across many series quickly\n\n🔗 Integrate cleanly with Nixtla’s ecosystem (statsforecast, mlforecast, etc.)\n\n📈 Support end-to-end forecasting pipelines\n\n\n\n\n\nGetting Started\n\nFeature Engineering\n\n\n\n\n\nForecasting is rarely just “fit a model.” Most of the heavy lifting happens in data prep and feature engineering.\ntsforge gives you a reliable, repeatable toolkit for that messy step, so you can spend more time on modeling and decision-making.\n\n\n\n\n```bash pip install tsforge",
+    "text": "tsforge is a Python package for building and managing forecasting features.\nIt’s designed to make it easy to:\n\n🏗️ Engineer time series features (lags, rolling stats, seasonalities)\n\n⚡ Scale feature creation across many series quickly\n\n🔗 Integrate cleanly with Nixtla’s ecosystem (statsforecast, mlforecast, etc.)\n\n📈 Support end-to-end forecasting pipelines\n\n\n\n\n\nGetting Started\n\nFeature Engineering\n\n\n\n\n\n\nForecasting is rarely just “fit a model.” Most of the heavy lifting happens in data prep and feature engineering.\ntsforge gives you a reliable, repeatable toolkit for that messy step, so you can spend more time on modeling and decision-making.\n\n\n\n\n```bash pip install tsforge",
     "crumbs": [
       "Home",
       "tsforge"
@@ -53,6 +89,18 @@
     "crumbs": [
       "Home",
       "tsforge"
+    ]
+  },
+  {
+    "objectID": "tutorials/01_intro.html",
+    "href": "tutorials/01_intro.html",
+    "title": "Getting Started",
+    "section": "",
+    "text": "1. Welcome to TSForge\nTSForge is a modern, production-grade forecasting toolkit designed for:\n\nProfessional forecasters\n\nData science teams\n\nEnterprise forecasting systems\n\nStudents learning forecasting through Forecast Academy\n\nTSForge includes:\n\nCleaning & preprocessing utilities\n\nEDA & diagnostics\n\nFeature engineering\n\nForecast evaluation\n\nHigh-grade visualization tools (Plotly-based)\n\nA consistent architecture designed for production and education\n\nThis guide helps you install TSForge, load your first dataset, and run your first visualization.\n\n\n\n2. Installation\nTSForge requires Python 3.9+.\nInstall from your GitHub repo (adjust if needed):\n```bash pip install -e .",
+    "crumbs": [
+      "Home",
+      "Tutorials",
+      "Getting Started"
     ]
   },
   {
