@@ -19,3 +19,6 @@ data/*
 
 # VS Code
 .vscode/
+
+# Poetry
+poetry.lock

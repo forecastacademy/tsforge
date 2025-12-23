@@ -1,7 +1,6 @@
 ### TS FEATURES EXTENSION FUNCTIONS FOR ADVANCED TIMESERIES FEATURE ENGINEERING/STATIC EMBEDDING ## #
 
 import antropy
-import nolds
 import numba
 import numpy as np
 from sklearn.feature_selection import mutual_info_regression
@@ -34,10 +33,12 @@ def permutation_entropy(x, freq: int):
 
 
 def hurst_exp_dfa(x, freq: int):
+    import nolds
     return {"hurst_exp_dfa": nolds.dfa(x)}
 
 
 def lya_exp(x, freq: int):
+    import nolds
     try:
         return {"lya_exp": nolds.lyap_r(x)}
     except:

@@ -136,3 +136,60 @@ def style_leaderboard(
 
     sty = sty.set_table_styles(table_styles, overwrite=False)
     return sty
+
+# -------------------------------------------------------------------
+# 3) Heatmap Table Styler
+# -------------------------------------------------------------------
+
+def style_heatmap_table(
+    df: pd.DataFrame,
+    group_col: str,
+    metrics: list[str],
+    title: Optional[str] = None,
+    cmap: str = "RdYlGn_r",
+    precision: int = 3,
+) -> Styler:
+    """
+    Create a styled heatmap table showing mean metrics by group.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing the data.
+    group_col : str
+        Column to group by (e.g., 'dept_id', 'cat_id').
+    metrics : list of str
+        Metric columns to summarize.
+    title : str, optional
+        Table caption.
+    cmap : str
+        Colormap for background gradient (default: 'RdYlGn_r').
+    precision : int
+        Decimal places (default: 3).
+    
+    Returns
+    -------
+    pandas.Styler
+    
+    Examples
+    --------
+    >>> from tsforge.display import style_heatmap_table
+    >>> styled = style_heatmap_table(diagnostics, 'dept_id', ['trend', 'entropy', 'adi'])
+    >>> display(styled)
+    """
+    summary = df.groupby(group_col)[metrics].mean().round(precision)
+    
+    sty = (
+        summary.style
+        .set_table_attributes('class="dataframe tsforge-heatmap"')
+        .background_gradient(cmap=cmap, axis=0)
+        .format(f'{{:.{precision}f}}')
+    )
+    
+    if title:
+        sty = sty.set_caption(title).set_table_styles([{
+            'selector': 'caption',
+            'props': [('font-size', '14px'), ('font-weight', 'bold'), ('padding', '10px')]
+        }])
+    
+    return sty

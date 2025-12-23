@@ -29,6 +29,15 @@ def pct_missing_dates(x):
     return (len(expected_idx) - len(x)) / len(expected_idx) * 100
 
 
+def assign_sb_quadrant(cv2: float, adi: float) -> str:
+    """Classify into Syntetos-Boylan demand quadrants based on CV² and ADI."""
+    if pd.isna(cv2) or pd.isna(adi):
+        return 'Unknown'
+    if adi <= 1.32:
+        return 'Smooth' if cv2 <= 0.49 else 'Erratic'
+    return 'Intermittent' if cv2 <= 0.49 else 'Lumpy'
+
+
 TSFORGE_FEATURES = [
     # BASE TSFEATURES
     acf_features,
