@@ -49,6 +49,10 @@ def finalize_figure(
     go.Figure
         The finalized figure.
     """
+    # Capture any existing height/width before applying theme
+    existing_height = fig.layout.height
+    existing_width = fig.layout.width
+    
     fig = apply_theme(fig, theme)
 
     if style:
@@ -68,16 +72,28 @@ def finalize_figure(
             fig.update_yaxes(title_text=style["y_title"])
         if "y_range" in style:
             fig.update_yaxes(range=style["y_range"])
+        # Allow callers to pass height/width through style dict
+        if "height" in style:
+            try:
+                existing_height = int(style["height"])
+            except Exception:
+                pass
+        if "width" in style:
+            try:
+                existing_width = int(style["width"])
+            except Exception:
+                pass
 
     fig = apply_legend(fig, theme)
 
     # Auto-calculate legend rows and bottom margin
-    num_legend_items = sum(1 for trace in fig.data if trace.showlegend)
+    num_legend_items = sum(1 for trace in fig.data if getattr(trace, 'showlegend', True))
     legend_rows = max(1, (num_legend_items + 5) // 6)
     bottom_margin = base_margin_bottom + (legend_rows * 25)
 
-    fig.update_layout(
-        legend=dict(
+    # Build final layout update, preserving existing height/width
+    final_layout = {
+        "legend": dict(
             orientation='h',
             x=0.5,
             y=-0.12,
@@ -87,8 +103,16 @@ def finalize_figure(
             bordercolor='rgba(0,0,0,0.1)',
             borderwidth=1,
         ),
-        margin=dict(b=bottom_margin),
-    )
+        "margin": dict(b=bottom_margin),
+    }
+    
+    # Restore height/width if they were set
+    if existing_height is not None:
+        final_layout["height"] = existing_height
+    if existing_width is not None:
+        final_layout["width"] = existing_width
+
+    fig.update_layout(**final_layout)
 
     return fig
 

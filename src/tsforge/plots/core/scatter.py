@@ -92,6 +92,12 @@ def plot_scatter(
     use_metric_defaults: bool = False,
     # Data processing
     clip_quantile: Optional[float] = None,
+    # Axis range control
+    x_range: Optional[Tuple[float, float]] = None,
+    y_range: Optional[Tuple[float, float]] = None,
+    # Figure size
+    height: Optional[int] = None,
+    width: Optional[int] = None,
     # Styling
     marker_size: int = 8,
     opacity: float = 0.7,
@@ -147,6 +153,14 @@ def plot_scatter(
         Auto-detect thresholds and quadrant labels for known metrics.
     clip_quantile : float, optional
         Clip data to this quantile range (e.g., 0.95 clips to 5-95%).
+    x_range : tuple of (float, float), optional
+        Explicit (min, max) range for x-axis. Applied after clip_quantile.
+    y_range : tuple of (float, float), optional
+        Explicit (min, max) range for y-axis. Applied after clip_quantile.
+    height : int, optional
+        Figure height in pixels. Default is ~450 for standard plots.
+    width : int, optional
+        Figure width in pixels. Default is ~700 for standard plots.
     marker_size : int, default 8
         Base marker size (scatter only).
     opacity : float, default 0.7
@@ -181,6 +195,14 @@ def plot_scatter(
     ...     df, x='trend', y='adi',
     ...     kind='density',
     ...     use_metric_defaults=True,
+    ... )
+
+    >>> # Density plot with constrained y-axis for better visibility
+    >>> plot_scatter(
+    ...     df, x='trend', y='adi',
+    ...     kind='density',
+    ...     use_metric_defaults=True,
+    ...     y_range=(0, 5),
     ... )
 
     >>> # Custom quadrant labels
@@ -277,9 +299,16 @@ def plot_scatter(
 
     # Add quadrant labels
     if quadrant_labels and x_threshold is not None and y_threshold is not None:
+        # Use range bounds for label positioning if specified, otherwise use data bounds
+        x_min = x_range[0] if x_range else df[x].min()
+        x_max = x_range[1] if x_range else df[x].max()
+        y_min = y_range[0] if y_range else df[y].min()
+        y_max = y_range[1] if y_range else df[y].max()
+        
         _add_quadrant_labels(
             fig, df, x, y, x_threshold, y_threshold,
-            quadrant_labels, quadrant_colors or QUADRANT_COLORS, show_quadrant_pcts
+            quadrant_labels, quadrant_colors or QUADRANT_COLORS, show_quadrant_pcts,
+            x_min=x_min, x_max=x_max, y_min=y_min, y_max=y_max,
         )
 
     # Add threshold annotation at bottom
@@ -292,6 +321,21 @@ def plot_scatter(
             font=dict(size=10, color="#7f8c8d"),
         )
         fig.update_layout(margin=dict(b=80))
+
+    # Apply explicit axis ranges if specified
+    if x_range is not None:
+        fig.update_xaxes(range=list(x_range))
+    if y_range is not None:
+        fig.update_yaxes(range=list(y_range))
+
+    # Apply figure size if specified
+    size_updates = {}
+    if height is not None:
+        size_updates['height'] = height
+    if width is not None:
+        size_updates['width'] = width
+    if size_updates:
+        fig.update_layout(**size_updates)
 
     # Update axis labels
     fig.update_xaxes(title_text=x.replace("_", " ").title())
@@ -348,13 +392,25 @@ def _add_quadrant_labels(
     labels: Dict[str, str],
     colors: Dict[str, str],
     show_pcts: bool,
+    *,
+    x_min: Optional[float] = None,
+    x_max: Optional[float] = None,
+    y_min: Optional[float] = None,
+    y_max: Optional[float] = None,
 ) -> None:
-    """Add quadrant labels with optional percentages."""
+    """Add quadrant labels with optional percentages.
+    
+    Parameters
+    ----------
+    x_min, x_max, y_min, y_max : float, optional
+        Explicit axis bounds for label positioning. If not provided,
+        uses data min/max values.
+    """
     n_total = len(df)
     if n_total == 0:
         return
 
-    # Calculate quadrant percentages
+    # Calculate quadrant percentages (always based on full data, not clipped range)
     q_tl = ((df[x] < x_threshold) & (df[y] >= y_threshold)).sum() / n_total * 100
     q_tr = ((df[x] >= x_threshold) & (df[y] >= y_threshold)).sum() / n_total * 100
     q_bl = ((df[x] < x_threshold) & (df[y] < y_threshold)).sum() / n_total * 100
@@ -362,9 +418,15 @@ def _add_quadrant_labels(
 
     pcts = {"top_left": q_tl, "top_right": q_tr, "bottom_left": q_bl, "bottom_right": q_br}
 
-    # Get axis ranges
-    x_min, x_max = df[x].min(), df[x].max()
-    y_min, y_max = df[y].min(), df[y].max()
+    # Use provided bounds or fall back to data bounds
+    if x_min is None:
+        x_min = df[x].min()
+    if x_max is None:
+        x_max = df[x].max()
+    if y_min is None:
+        y_min = df[y].min()
+    if y_max is None:
+        y_max = df[y].max()
 
     # Calculate label positions
     positions = {

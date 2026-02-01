@@ -1,5 +1,10 @@
 # tsforge/plots/charts/decomposition.py
-"""STL decomposition visualization for time series."""
+"""STL decomposition visualization for time series.
+
+Note: This is a specialized plot with multi-component panel layout (observed,
+trend, seasonal, resid) that requires custom mode handling. Future plan: merge
+into plot_timeseries(..., decompose=True).
+"""
 from __future__ import annotations
 
 import pandas as pd
@@ -7,7 +12,7 @@ import numpy as np
 from math import ceil
 from typing import Union, List, Optional, Literal
 
-from .._styling import PALETTE, apply_theme, apply_legend
+from .._styling import PALETTE
 from .._preprocessing import aggregate_by_group, select_ids
 from .._layout import finalize_figure
 

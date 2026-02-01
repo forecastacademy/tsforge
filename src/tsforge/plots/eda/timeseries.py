@@ -1,6 +1,6 @@
-# tsforge/plots/charts/timeseries.py
+# tsforge/plots/eda/timeseries.py
 """
-Full-feature Forecast Academy-grade time-series plot.
+Unified time series plotter for tsforge.
 
 Supports overlay, facet, and dropdown modes with forecasts,
 prediction intervals, anomalies, and events.
@@ -8,22 +8,19 @@ prediction intervals, anomalies, and events.
 from __future__ import annotations
 
 import pandas as pd
-from typing import Optional, Union, List, Callable
+from typing import Optional, Union, List, Callable, Literal
 
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
-from .._styling import PALETTE, HIGHLIGHT, hex_to_rgba, THEMES, apply_theme, apply_legend
+from .._styling import PALETTE, THEMES, hex_to_rgba
 from .._preprocessing import (
-    apply_smoothing,
-    aggregate_by_group,
-    resample_df,
-    select_ids,
+    preprocess_for_plot,
     merge_all_events,
     normalize_anomalies,
     pi_column_names,
 )
-from .._layout import finalize_figure, build_dropdown_buttons, add_event_lines_and_labels
+from .._layout import add_event_lines_and_labels
+from .._display import render_by_mode
 
 
 def plot_timeseries(
@@ -32,78 +29,145 @@ def plot_timeseries(
     id_col: str,
     date_col: str,
     value_col: Union[str, Callable] = "y",
+    # Grouping & selection
     group_col: Optional[Union[str, List[str]]] = None,
     agg: str = "sum",
     freq: Optional[str] = None,
     ids: Optional[Union[str, int, List[str]]] = None,
     max_ids: int = 6,
     smooth_window: Optional[int] = None,
+    # Forecast overlays
     forecast: Optional[pd.DataFrame] = None,
     forecast_value_col: str = "yhat",
     level: Optional[List[int]] = None,
     lo_pattern: str = "{col}-lo-{level}",
     hi_pattern: str = "{col}-hi-{level}",
+    # Events
     events: Union[str, pd.DataFrame, None] = None,
     events_global: Optional[pd.DataFrame] = None,
     events_local: Optional[pd.DataFrame] = None,
     event_label_col: str = "event",
     events_config: Optional[dict] = None,
+    # Anomalies
     anomalies: Union[pd.DataFrame, str, None] = None,
     anomaly_flag_value: int = 1,
     anomalies_config: Optional[dict] = None,
-    mode: str = "overlay",
-    wrap: int = 3,
+    # Display
+    mode: Literal["overlay", "facet", "dropdown"] = "overlay",
+    wrap: int = 2,
     theme: str = "fa",
     style: Optional[dict] = None,
     engine: str = "plotly",
-):
+) -> go.Figure:
     """
-    Full-feature Forecast Academy-grade time-series plot.
+    Unified time series plotter with optional forecast, events, and anomalies.
 
-    Supports:
-      - overlay (stacked series)
-      - facet (small multiples)
-      - dropdown (interactive selector)
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data with id, date, and value columns.
+    id_col : str
+        Column identifying each time series.
+    date_col : str
+        Column containing dates/timestamps.
+    value_col : str or callable
+        Column containing values, or a function that computes values from df.
+    group_col : str or list, optional
+        Column(s) to group by before plotting (aggregates within groups).
+    agg : str, default "sum"
+        Aggregation function for grouping/resampling.
+    freq : str, optional
+        Resample to this frequency (e.g., "W", "M").
+    ids : str, int, or list, optional
+        Specific series to plot. If int, plots first N series.
+    max_ids : int, default 6
+        Maximum number of series to plot if ids not specified.
+    smooth_window : int, optional
+        Rolling mean window for smoothing.
+    forecast : pd.DataFrame, optional
+        Forecast data with same id_col and date_col.
+    forecast_value_col : str, default "yhat"
+        Column in forecast containing point predictions.
+    level : list of int, optional
+        Prediction interval levels (e.g., [80, 95]).
+    lo_pattern, hi_pattern : str
+        Column name patterns for PI bounds.
+    events : str or pd.DataFrame, optional
+        Events to mark. If str, column name in df. If DataFrame, event data.
+    events_global : pd.DataFrame, optional
+        Global events (applied to all series).
+    events_local : pd.DataFrame, optional
+        Local events (series-specific).
+    event_label_col : str, default "event"
+        Column containing event labels.
+    events_config : dict, optional
+        Event styling: {"color": str, "stagger_labels": bool}.
+    anomalies : pd.DataFrame or str, optional
+        Anomalies to mark. If str, column name in df.
+    anomaly_flag_value : int, default 1
+        Value indicating anomaly in a numeric column.
+    anomalies_config : dict, optional
+        Anomaly styling: {"color": str, "marker_symbol": str, "marker_size": int}.
+    mode : {"overlay", "facet", "dropdown"}, default "overlay"
+        Display mode for multiple series.
+    wrap : int, default 2
+        Columns for facet mode.
+    theme : str, default "fa"
+        Theme: "fa", "mckinsey", "minimal", "dark", "seaborn", "ggplot".
+    style : dict, optional
+        Style overrides: {"title", "subtitle", "x_title", "y_title"}.
+    engine : str, default "plotly"
+        Plotting engine (only "plotly" supported).
 
-    Features:
-      - actuals, smoothing, forecast, prediction intervals
-      - anomalies, inline/global/local events + labels
-      - grouping & resampling
-      - themes (FA default, McKinsey, Minimal, Dark)
+    Returns
+    -------
+    go.Figure
+        Plotly figure object.
     """
     if engine.lower() != "plotly":
-        raise NotImplementedError("Only Plotly engine is supported in FA v1.")
+        raise NotImplementedError("Only Plotly engine is supported.")
 
-    # Preprocessing
+    # Handle callable value_col
     df = df.copy()
-    df[date_col] = pd.to_datetime(df[date_col])
-
     if callable(value_col):
         df["_value"] = value_col(df)
         value_col = "_value"
 
-    df, id_col = aggregate_by_group(df, group_col, date_col, value_col, agg, id_col)
-    df = resample_df(df, freq, id_col, date_col, value_col, agg)
-    ids = select_ids(df, id_col, ids, max_ids)
+    # Preprocess data
+    df_sub, selected_ids, effective_id_col = preprocess_for_plot(
+        df=df,
+        id_col=id_col,
+        date_col=date_col,
+        value_col=value_col,
+        group_col=group_col,
+        agg=agg,
+        ids=ids,
+        max_ids=max_ids,
+        freq=freq,
+        smooth_window=smooth_window,
+    )
 
-    df_sub = df[df[id_col].isin(ids)].copy()
-    df_sub = df_sub.sort_values([id_col, date_col])
-
-    # Align forecast
+    # Prepare forecast
     fcst_df = None
     if forecast is not None:
         fcst_df = forecast.copy()
         fcst_df[date_col] = pd.to_datetime(fcst_df[date_col])
-        fcst_df = fcst_df[fcst_df[id_col].isin(ids)]
-        fcst_df = fcst_df.sort_values([id_col, date_col])
+        fcst_df = fcst_df[fcst_df[effective_id_col].isin(selected_ids)]
+        fcst_df = fcst_df.sort_values([effective_id_col, date_col])
 
-    # Smoothing
-    df_sub = apply_smoothing(df_sub, id_col, value_col, smooth_window)
+    # Prepare anomalies
+    an_df = normalize_anomalies(anomalies, df_sub, effective_id_col, date_col, anomaly_flag_value)
+    if an_df is not None:
+        an_df = an_df.merge(
+            df_sub[[effective_id_col, date_col, value_col]],
+            on=[effective_id_col, date_col],
+            how="left",
+        ).rename(columns={value_col: "y_anom"})
 
-    # Events + anomalies
+    # Prepare events
     ev_all = merge_all_events(
         df=df_sub,
-        id_col=id_col,
+        id_col=effective_id_col,
         date_col=date_col,
         event_label_col=event_label_col,
         inline=events if isinstance(events, str) else None,
@@ -112,309 +176,148 @@ def plot_timeseries(
         direct_df=events if isinstance(events, pd.DataFrame) else None,
     )
 
-    an_df = normalize_anomalies(anomalies, df_sub, id_col, date_col, anomaly_flag_value)
-    if an_df is not None:
-        an_df = (
-            an_df.merge(
-                df_sub[[id_col, date_col, value_col]],
-                on=[id_col, date_col],
-                how="left",
-            )
-            .rename(columns={value_col: "y_anom"})
-        )
-
-    # Select mode
-    if mode == "overlay":
-        fig = _plot_overlay(
-            df_sub, fcst_df, ids, id_col, date_col, value_col,
-            forecast_value_col, level, lo_pattern, hi_pattern,
-            ev_all, an_df, events_config, anomalies_config, theme,
-        )
-    elif mode == "facet":
-        fig = _plot_facet(
-            df_sub, fcst_df, ids, id_col, date_col, value_col,
-            forecast_value_col, level, lo_pattern, hi_pattern,
-            ev_all, an_df, events_config, anomalies_config, wrap, theme,
-        )
-    elif mode == "dropdown":
-        fig = _plot_dropdown(
-            df_sub, fcst_df, ids, id_col, date_col, value_col,
-            forecast_value_col, level, lo_pattern, hi_pattern,
-            ev_all, an_df, events_config, anomalies_config, theme,
-        )
-    else:
-        raise ValueError("mode must be one of: overlay, facet, dropdown")
-
-    return finalize_figure(fig, theme, style)
-
-
-def _plot_overlay(
-    df_sub, fcst_df, ids, id_col, date_col, value_col,
-    forecast_value_col, level, lo_pattern, hi_pattern,
-    ev_all, an_df, events_config, anomalies_config, theme,
-):
-    fig = go.Figure()
-
+    # Get theme settings
     t = THEMES.get(theme, THEMES["fa"])
-    line_width = t.get("line_width", 2)
-    pi_opacity = t.get("pi_opacity", 0.20)
-    pi_color_default = t.get("pi_color", None)
-    accent_color = t.get("accent_color", "crimson")
+    ev_color = (events_config or {}).get("color", "#555")
+    ev_stagger = (events_config or {}).get("stagger_labels", True)
 
-    anomaly_legend_shown = False
-    ev_color = events_config.get("color", "#555") if events_config else "#555"
-    ev_stagger = events_config.get("stagger_labels", True) if events_config else True
-    an_color = anomalies_config.get("color", accent_color) if anomalies_config else accent_color
-    an_symbol = anomalies_config.get("marker_symbol", "x") if anomalies_config else "x"
-    an_size = anomalies_config.get("marker_size", 8) if anomalies_config else 8
+    # Build traces for each series
+    traces_by_id = {}
+    for i, uid in enumerate(selected_ids):
+        traces_by_id[uid] = _build_series_traces(
+            df_sub=df_sub[df_sub[effective_id_col] == uid],
+            fcst_df=fcst_df[fcst_df[effective_id_col] == uid] if fcst_df is not None else None,
+            an_df=an_df[an_df[effective_id_col] == uid] if an_df is not None else None,
+            uid=uid,
+            date_col=date_col,
+            value_col=value_col,
+            forecast_value_col=forecast_value_col,
+            level=level,
+            lo_pattern=lo_pattern,
+            hi_pattern=hi_pattern,
+            theme_settings=t,
+            anomalies_config=anomalies_config,
+            color_index=i,
+            n_series=len(selected_ids),
+        )
 
-    for i, uid in enumerate(ids):
-        color = PALETTE[i % len(PALETTE)]
-        if len(ids) == 1 and "line_color" in t:
-            color = t["line_color"]
-
-        sub = df_sub[df_sub[id_col] == uid]
-        fsub = fcst_df[fcst_df[id_col] == uid] if fcst_df is not None else None
-        an_sub = an_df[an_df[id_col] == uid] if an_df is not None else None
-
-        # Prediction intervals
-        if fsub is not None and level:
-            for L in sorted(level, reverse=True):
-                lo, hi = pi_column_names(forecast_value_col, L, lo_pattern, hi_pattern)
-                if lo in fsub.columns and hi in fsub.columns:
-                    fig.add_trace(go.Scatter(
-                        x=fsub[date_col], y=fsub[lo],
-                        mode="lines", line=dict(width=0),
-                        hoverinfo="skip", showlegend=False,
-                    ))
-                    fillcolor = pi_color_default or hex_to_rgba(color, pi_opacity)
-                    fig.add_trace(go.Scatter(
-                        x=fsub[date_col], y=fsub[hi],
-                        mode="lines", line=dict(width=0),
-                        fill="tonexty", fillcolor=fillcolor,
-                        hoverinfo="skip", showlegend=False,
-                    ))
-
-        # Actuals
-        fig.add_trace(go.Scatter(
-            x=sub[date_col], y=sub[value_col],
-            mode="lines", name=str(uid),
-            line=dict(color=color, width=line_width),
-        ))
-
-        # Forecast
-        if fsub is not None:
-            fig.add_trace(go.Scatter(
-                x=fsub[date_col], y=fsub[forecast_value_col],
-                mode="lines",
-                line=dict(color=color, width=line_width, dash="dash"),
-                name=f"{uid} forecast", showlegend=False,
-            ))
-
-        # Anomalies
-        if an_sub is not None and len(an_sub) > 0:
-            fig.add_trace(go.Scatter(
-                x=an_sub[date_col], y=an_sub["y_anom"],
-                mode="markers",
-                name="Anomalies" if not anomaly_legend_shown else "",
-                marker=dict(color=an_color, size=an_size, symbol=an_symbol),
-                showlegend=not anomaly_legend_shown,
-            ))
-            anomaly_legend_shown = True
-
-    # Events
-    if ev_all is not None:
-        add_event_lines_and_labels(fig, ev_all, date_col, ev_color=ev_color, stagger=ev_stagger)
-
-    return fig
-
-
-def _plot_facet(
-    df_sub, fcst_df, ids, id_col, date_col, value_col,
-    forecast_value_col, level, lo_pattern, hi_pattern,
-    ev_all, an_df, events_config, anomalies_config, wrap, theme,
-):
-    n = len(ids)
-    fig = make_subplots(
-        rows=n, cols=1,
-        shared_xaxes=True,
-        subplot_titles=[str(uid) for uid in ids],
+    # Render using unified display module
+    fig = render_by_mode(
+        traces_by_id,
+        mode=mode,
+        wrap=wrap,
+        theme=theme,
+        style=style,
     )
 
-    t = THEMES.get(theme, THEMES["fa"])
-    line_width = t.get("line_width", 2)
-    pi_opacity = t.get("pi_opacity", 0.20)
-    pi_color_default = t.get("pi_color", None)
-    accent_color = t.get("accent_color", "crimson")
-
-    ev_color = events_config.get("color", "#555") if events_config else "#555"
-    ev_stagger = events_config.get("stagger_labels", True) if events_config else True
-    an_color = anomalies_config.get("color", accent_color) if anomalies_config else accent_color
-    an_symbol = anomalies_config.get("marker_symbol", "x") if anomalies_config else "x"
-    an_size = anomalies_config.get("marker_size", 8) if anomalies_config else 8
-
-    anomaly_legend_shown = False
-
-    for r, uid in enumerate(ids, start=1):
-        color = t.get("line_color", PALETTE[(r - 1) % len(PALETTE)])
-        sub = df_sub[df_sub[id_col] == uid]
-        fsub = fcst_df[fcst_df[id_col] == uid] if fcst_df is not None else None
-        an_sub = an_df[an_df[id_col] == uid] if an_df is not None else None
-
-        # PIs
-        if fsub is not None and level:
-            for L in sorted(level, reverse=True):
-                lo, hi = pi_column_names(forecast_value_col, L, lo_pattern, hi_pattern)
-                if lo in fsub.columns and hi in fsub.columns:
-                    fig.add_trace(go.Scatter(
-                        x=fsub[date_col], y=fsub[lo],
-                        mode="lines", line=dict(width=0),
-                        hoverinfo="skip", showlegend=False,
-                    ), row=r, col=1)
-                    fillcolor = pi_color_default or hex_to_rgba(color, pi_opacity)
-                    fig.add_trace(go.Scatter(
-                        x=fsub[date_col], y=fsub[hi],
-                        mode="lines", line=dict(width=0),
-                        fill="tonexty", fillcolor=fillcolor,
-                        hoverinfo="skip", showlegend=False,
-                    ), row=r, col=1)
-
-        # Actuals
-        fig.add_trace(go.Scatter(
-            x=sub[date_col], y=sub[value_col],
-            mode="lines", name=str(uid),
-            line=dict(color=color, width=line_width),
-        ), row=r, col=1)
-
-        # Forecast
-        if fsub is not None:
-            fig.add_trace(go.Scatter(
-                x=fsub[date_col], y=fsub[forecast_value_col],
-                mode="lines",
-                line=dict(color=color, dash="dash", width=line_width),
-                showlegend=False,
-            ), row=r, col=1)
-
-        # Anomalies
-        if an_sub is not None and len(an_sub) > 0:
-            fig.add_trace(go.Scatter(
-                x=an_sub[date_col], y=an_sub["y_anom"],
-                mode="markers",
-                name="Anomalies" if not anomaly_legend_shown else "",
-                marker=dict(color=an_color, size=an_size, symbol=an_symbol),
-                showlegend=not anomaly_legend_shown,
-            ), row=r, col=1)
-            anomaly_legend_shown = True
-
-    # Events
+    # Add event lines (works for all modes)
     if ev_all is not None:
+        n_rows = len(selected_ids) if mode == "facet" else None
         add_event_lines_and_labels(
             fig, ev_all, date_col,
-            ev_color=ev_color, stagger=ev_stagger,
-            facet=True, nrows=n
+            event_label_col=event_label_col,
+            ev_color=ev_color,
+            stagger=ev_stagger,
+            facet=(mode == "facet"),
+            nrows=n_rows,
         )
 
-    fig.update_layout(height=280 * n)
     return fig
 
 
-def _plot_dropdown(
-    df_sub, fcst_df, ids, id_col, date_col, value_col,
-    forecast_value_col, level, lo_pattern, hi_pattern,
-    ev_all, an_df, events_config, anomalies_config, theme,
-):
-    fig = go.Figure()
-    trace_map = {uid: [] for uid in ids}
-    anomaly_legend_shown = False
+def _build_series_traces(
+    df_sub: pd.DataFrame,
+    fcst_df: Optional[pd.DataFrame],
+    an_df: Optional[pd.DataFrame],
+    uid: str,
+    date_col: str,
+    value_col: str,
+    forecast_value_col: str,
+    level: Optional[List[int]],
+    lo_pattern: str,
+    hi_pattern: str,
+    theme_settings: dict,
+    anomalies_config: Optional[dict],
+    color_index: int,
+    n_series: int,
+) -> List[go.BaseTraceType]:
+    """
+    Build all traces for a single series.
 
-    t = THEMES.get(theme, THEMES["fa"])
-    line_width = t.get("line_width", 2)
-    pi_opacity = t.get("pi_opacity", 0.20)
-    pi_color_default = t.get("pi_color", None)
-    accent_color = t.get("accent_color", "crimson")
+    Returns list of traces: [PI bands..., actuals line, forecast line, anomaly markers]
+    """
+    traces = []
 
-    ev_color = events_config.get("color", "#555") if events_config else "#555"
-    ev_stagger = events_config.get("stagger_labels", True) if events_config else True
-    an_color = anomalies_config.get("color", accent_color) if anomalies_config else accent_color
-    an_symbol = anomalies_config.get("marker_symbol", "x") if anomalies_config else "x"
-    an_size = anomalies_config.get("marker_size", 8) if anomalies_config else 8
+    # Theme settings
+    line_width = theme_settings.get("line_width", 2)
+    pi_opacity = theme_settings.get("pi_opacity", 0.20)
+    accent_color = theme_settings.get("accent_color", "crimson")
 
-    for i, uid in enumerate(ids):
-        color = PALETTE[i % len(PALETTE)]
-        if len(ids) == 1 and "line_color" in t:
-            color = t["line_color"]
+    # Color selection
+    color = PALETTE[color_index % len(PALETTE)]
+    if n_series == 1 and "line_color" in theme_settings:
+        color = theme_settings["line_color"]
 
-        visible = (i == 0)
-        sub = df_sub[df_sub[id_col] == uid]
-        fsub = fcst_df[fcst_df[id_col] == uid] if fcst_df is not None else None
-        an_sub = an_df[an_df[id_col] == uid] if an_df is not None else None
+    # Anomaly config
+    an_cfg = anomalies_config or {}
+    an_color = an_cfg.get("color", accent_color)
+    an_symbol = an_cfg.get("marker_symbol", "x")
+    an_size = an_cfg.get("marker_size", 8)
 
-        # PIs
-        if fsub is not None and level:
-            for L in sorted(level, reverse=True):
-                lo, hi = pi_column_names(forecast_value_col, L, lo_pattern, hi_pattern)
-                if lo in fsub.columns and hi in fsub.columns:
-                    fig.add_trace(go.Scatter(
-                        x=fsub[date_col], y=fsub[lo],
-                        mode="lines", line=dict(width=0),
-                        hoverinfo="skip", visible=visible, showlegend=False,
-                    ))
-                    trace_map[uid].append(len(fig.data) - 1)
-                    fillcolor = pi_color_default or hex_to_rgba(color, pi_opacity)
-                    fig.add_trace(go.Scatter(
-                        x=fsub[date_col], y=fsub[hi],
-                        mode="lines", line=dict(width=0),
-                        fill="tonexty", fillcolor=fillcolor,
-                        hoverinfo="skip", visible=visible, showlegend=False,
-                    ))
-                    trace_map[uid].append(len(fig.data) - 1)
+    # 1. Prediction intervals (rendered first, behind everything)
+    if fcst_df is not None and level and len(fcst_df) > 0:
+        for L in sorted(level, reverse=True):
+            lo, hi = pi_column_names(forecast_value_col, L, lo_pattern, hi_pattern)
+            if lo in fcst_df.columns and hi in fcst_df.columns:
+                # Lower bound (invisible line for fill reference)
+                traces.append(go.Scatter(
+                    x=fcst_df[date_col],
+                    y=fcst_df[lo],
+                    mode="lines",
+                    line=dict(width=0),
+                    hoverinfo="skip",
+                    showlegend=False,
+                ))
+                # Upper bound with fill to lower
+                traces.append(go.Scatter(
+                    x=fcst_df[date_col],
+                    y=fcst_df[hi],
+                    mode="lines",
+                    line=dict(width=0),
+                    fill="tonexty",
+                    fillcolor=hex_to_rgba(color, pi_opacity),
+                    hoverinfo="skip",
+                    showlegend=False,
+                ))
 
-        # Actuals
-        fig.add_trace(go.Scatter(
-            x=sub[date_col], y=sub[value_col],
+    # 2. Actuals line
+    traces.append(go.Scatter(
+        x=df_sub[date_col],
+        y=df_sub[value_col],
+        mode="lines",
+        name=str(uid),
+        line=dict(color=color, width=line_width),
+    ))
+
+    # 3. Forecast line
+    if fcst_df is not None and len(fcst_df) > 0:
+        traces.append(go.Scatter(
+            x=fcst_df[date_col],
+            y=fcst_df[forecast_value_col],
             mode="lines",
-            line=dict(color=color, width=line_width),
-            visible=visible, showlegend=False,
+            name=f"{uid} forecast",
+            line=dict(color=color, width=line_width, dash="dash"),
+            showlegend=False,
         ))
-        trace_map[uid].append(len(fig.data) - 1)
 
-        # Forecast
-        if fsub is not None:
-            fig.add_trace(go.Scatter(
-                x=fsub[date_col], y=fsub[forecast_value_col],
-                mode="lines",
-                line=dict(color=color, width=line_width, dash="dash"),
-                visible=visible, showlegend=False,
-            ))
-            trace_map[uid].append(len(fig.data) - 1)
+    # 4. Anomaly markers
+    if an_df is not None and len(an_df) > 0:
+        traces.append(go.Scatter(
+            x=an_df[date_col],
+            y=an_df["y_anom"],
+            mode="markers",
+            name="Anomalies",
+            marker=dict(color=an_color, size=an_size, symbol=an_symbol),
+        ))
 
-        # Anomalies
-        if an_sub is not None and len(an_sub) > 0:
-            fig.add_trace(go.Scatter(
-                x=an_sub[date_col], y=an_sub["y_anom"],
-                mode="markers",
-                marker=dict(color=an_color, size=an_size, symbol=an_symbol),
-                visible=visible,
-                name="Anomalies" if not anomaly_legend_shown else "",
-                showlegend=not anomaly_legend_shown,
-            ))
-            trace_map[uid].append(len(fig.data) - 1)
-            anomaly_legend_shown = True
-
-    # Events
-    if ev_all is not None:
-        add_event_lines_and_labels(fig, ev_all, date_col, ev_color=ev_color, stagger=ev_stagger)
-
-    # Dropdown
-    buttons = build_dropdown_buttons(trace_map, len(fig.data))
-    fig.update_layout(
-        updatemenus=[{
-            "buttons": buttons,
-            "direction": "down",
-            "x": 1.0, "y": 1.15,
-            "xanchor": "right",
-            "yanchor": "top",
-        }]
-    )
-
-    return fig
+    return traces

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
-from math import ceil
-from typing import Union, List, Optional, Literal
+from typing import Union, List, Optional, Literal, Dict
 
-from .._styling import PALETTE, HIGHLIGHT, ARCHETYPE_COLORS, ABC_COLORS, apply_theme, apply_legend
+import plotly.graph_objects as go
+
+from .._styling import PALETTE, HIGHLIGHT, ARCHETYPE_COLORS, ABC_COLORS, apply_theme
 from .._preprocessing import aggregate_by_group, select_ids
 from .._layout import finalize_figure
+from .._display import render_by_mode
 
 
 def plot_distribution(
@@ -31,10 +33,51 @@ def plot_distribution(
     style: Optional[dict] = None,
     engine: str = "plotly",
 ):
-    """Distribution visualization for time series values."""
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
+    """
+    Distribution visualization for time series values.
 
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data with id, date, and value columns.
+    id_col : str
+        Column identifying each time series.
+    date_col : str
+        Column containing dates/timestamps.
+    value_col : str
+        Column containing values to plot distribution of.
+    ids : None, int, str, or list, optional
+        Specific series to plot. If int, plots first N series.
+    group_col : str or list, optional
+        Column(s) to group by before plotting.
+    agg : str, default "sum"
+        Aggregation function for grouping.
+    kind : {"histogram", "density", "box", "violin"}, default "histogram"
+        Type of distribution visualization.
+    mode : {"overlay", "facet", "dropdown"}, default "overlay"
+        Display mode for multiple series.
+    bins : int, default 30
+        Number of bins for histogram/density.
+    log_scale : bool, default False
+        Use log scale for values.
+    exclude_zeros : bool, default False
+        Exclude zero values from distribution.
+    show_stats : bool, default True
+        Show statistical annotations.
+    wrap : int, optional
+        Columns for facet mode (default: 2).
+    theme : str, default "fa"
+        Theme name.
+    style : dict, optional
+        Style overrides.
+    engine : str, default "plotly"
+        Plotting engine (only "plotly" supported).
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure object.
+    """
     if engine != "plotly":
         raise NotImplementedError("Only Plotly engine is supported.")
 
@@ -52,7 +95,7 @@ def plot_distribution(
         df["_log_value"] = np.log1p(df[value_col].clip(lower=0))
         plot_col = "_log_value"
 
-    # Compute stats
+    # Compute stats for annotations
     stats = {}
     for uid in ids:
         sub = df[df[id_col] == uid][value_col]
@@ -61,17 +104,37 @@ def plot_distribution(
             "min": sub.min(), "max": sub.max(), "n": len(sub),
         }
 
-    if kind == "histogram":
-        fig = _plot_histogram(df, ids, id_col, plot_col, bins, mode, wrap, stats, show_stats)
-    elif kind == "density":
-        fig = _plot_density(df, ids, id_col, plot_col, bins, mode, wrap)
-    elif kind == "box":
-        fig = _plot_box(df, ids, id_col, plot_col, mode, wrap)
-    elif kind == "violin":
-        fig = _plot_violin(df, ids, id_col, plot_col, mode, wrap)
-    else:
-        raise ValueError("kind must be one of: histogram, density, box, violin")
+    # Build traces for each series
+    traces_by_id = {}
+    for i, uid in enumerate(ids):
+        sub = df[df[id_col] == uid]
+        color = PALETTE[i % len(PALETTE)]
 
+        if kind == "histogram":
+            traces_by_id[uid] = _build_histogram_traces(sub, plot_col, bins, uid, color)
+        elif kind == "density":
+            traces_by_id[uid] = _build_density_traces(sub, plot_col, bins, uid, color)
+        elif kind == "box":
+            traces_by_id[uid] = _build_box_traces(sub, plot_col, uid, color)
+        elif kind == "violin":
+            traces_by_id[uid] = _build_violin_traces(sub, plot_col, uid, color)
+        else:
+            raise ValueError("kind must be one of: histogram, density, box, violin")
+
+    # Render using unified display module
+    fig = render_by_mode(
+        traces_by_id,
+        mode=mode,
+        wrap=wrap or 2,
+        theme=theme,
+        style=style,
+    )
+
+    # Add stats annotations for dropdown mode
+    if mode == "dropdown" and show_stats:
+        _add_dropdown_stats(fig, ids, stats)
+
+    # Update axis labels
     x_label = f"log({value_col})" if log_scale else value_col
     if kind in ["histogram", "density"]:
         fig.update_xaxes(title_text=x_label)
@@ -79,178 +142,106 @@ def plot_distribution(
     else:
         fig.update_yaxes(title_text=x_label)
 
-    return finalize_figure(fig, theme, style)
-
-
-def _plot_histogram(df, ids, id_col, plot_col, bins, mode, wrap, stats, show_stats):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
-    if mode == "overlay":
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Histogram(
-                x=sub[plot_col], name=str(uid), opacity=0.7, nbinsx=bins,
-                marker=dict(color=PALETTE[i % len(PALETTE)]),
-            ))
-        fig.update_layout(barmode="overlay")
-    elif mode == "facet":
-        n = len(ids)
-        cols = wrap or 2
-        rows = ceil(n / cols)
-        fig = make_subplots(rows=rows, cols=cols, subplot_titles=[str(uid) for uid in ids])
-        r, c = 1, 1
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Histogram(
-                x=sub[plot_col], name=str(uid), nbinsx=bins, showlegend=False,
-                marker=dict(color=PALETTE[i % len(PALETTE)]),
-            ), row=r, col=c)
-            if show_stats:
-                mean_val = sub[plot_col].mean()
-                fig.add_vline(x=mean_val, row=r, col=c, line_dash="dash", line_color="black",
-                              annotation_text=f"μ={mean_val:.1f}", annotation_position="top right")
-            c += 1
-            if c > cols:
-                r += 1
-                c = 1
-        fig.update_layout(height=300 * rows)
-    else:  # dropdown
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Histogram(
-                x=sub[plot_col], name=str(uid), nbinsx=bins, visible=(i == 0), showlegend=False,
-                marker=dict(color=PALETTE[i % len(PALETTE)]),
-            ))
-        buttons = []
-        for i, uid in enumerate(ids):
-            visible = [j == i for j in range(len(ids))]
-            s = stats[uid]
-            title = f"{uid} | μ={s['mean']:.1f}, σ={s['std']:.1f}, n={s['n']}"
-            buttons.append(dict(label=str(uid), method="update", args=[{"visible": visible}, {"title": title}]))
-        fig.update_layout(updatemenus=[{"buttons": buttons, "direction": "down", "x": 1.0, "y": 1.15, "xanchor": "right", "yanchor": "top"}])
     return fig
 
 
-def _plot_density(df, ids, id_col, plot_col, bins, mode, wrap):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
-    if mode == "overlay":
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid][plot_col].dropna()
-            if len(sub) >= 2:
-                hist, bin_edges = np.histogram(sub, bins=bins, density=True)
-                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-                fig.add_trace(go.Scatter(
-                    x=bin_centers, y=hist, mode="lines", name=str(uid),
-                    line=dict(color=PALETTE[i % len(PALETTE)], width=2),
-                    fill="tozeroy", opacity=0.6,
-                ))
-    elif mode == "facet":
-        n = len(ids)
-        cols = wrap or 2
-        rows = ceil(n / cols)
-        fig = make_subplots(rows=rows, cols=cols, subplot_titles=[str(uid) for uid in ids])
-        r, c = 1, 1
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid][plot_col].dropna()
-            if len(sub) >= 2:
-                hist, bin_edges = np.histogram(sub, bins=bins, density=True)
-                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-                fig.add_trace(go.Scatter(
-                    x=bin_centers, y=hist, mode="lines", name=str(uid), showlegend=False,
-                    line=dict(color=PALETTE[i % len(PALETTE)], width=2), fill="tozeroy",
-                ), row=r, col=c)
-            c += 1
-            if c > cols:
-                r += 1
-                c = 1
-        fig.update_layout(height=300 * rows)
-    else:
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid][plot_col].dropna()
-            if len(sub) >= 2:
-                hist, bin_edges = np.histogram(sub, bins=bins, density=True)
-                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-                fig.add_trace(go.Scatter(
-                    x=bin_centers, y=hist, mode="lines", name=str(uid), visible=(i == 0), showlegend=False,
-                    line=dict(color=PALETTE[i % len(PALETTE)], width=2), fill="tozeroy",
-                ))
-        buttons = [dict(label=str(uid), method="update", args=[{"visible": [j == i for j in range(len(ids))]}]) for i, uid in enumerate(ids)]
-        fig.update_layout(updatemenus=[{"buttons": buttons, "direction": "down", "x": 1.0, "y": 1.15, "xanchor": "right", "yanchor": "top"}])
-    return fig
+def _build_histogram_traces(
+    sub: pd.DataFrame,
+    plot_col: str,
+    bins: int,
+    uid: str,
+    color: str,
+) -> List[go.BaseTraceType]:
+    """Build histogram trace for a single series."""
+    return [go.Histogram(
+        x=sub[plot_col],
+        name=str(uid),
+        opacity=0.7,
+        nbinsx=bins,
+        marker=dict(color=color),
+    )]
 
 
-def _plot_box(df, ids, id_col, plot_col, mode, wrap):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
+def _build_density_traces(
+    sub: pd.DataFrame,
+    plot_col: str,
+    bins: int,
+    uid: str,
+    color: str,
+) -> List[go.BaseTraceType]:
+    """Build density trace for a single series."""
+    data = sub[plot_col].dropna()
+    if len(data) < 2:
+        return []
 
-    if mode == "overlay":
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Box(y=sub[plot_col], name=str(uid), marker=dict(color=PALETTE[i % len(PALETTE)]), boxpoints="outliers"))
-    elif mode == "facet":
-        n = len(ids)
-        cols = wrap or 3
-        rows = ceil(n / cols)
-        fig = make_subplots(rows=rows, cols=cols, subplot_titles=[str(uid) for uid in ids])
-        r, c = 1, 1
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Box(y=sub[plot_col], name=str(uid), marker=dict(color=PALETTE[i % len(PALETTE)]), boxpoints="outliers", showlegend=False), row=r, col=c)
-            c += 1
-            if c > cols:
-                r += 1
-                c = 1
-        fig.update_layout(height=300 * rows)
-    else:
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Box(y=sub[plot_col], name=str(uid), marker=dict(color=PALETTE[i % len(PALETTE)]), boxpoints="outliers", visible=(i == 0), showlegend=False))
-        buttons = [dict(label=str(uid), method="update", args=[{"visible": [j == i for j in range(len(ids))]}]) for i, uid in enumerate(ids)]
-        fig.update_layout(updatemenus=[{"buttons": buttons, "direction": "down", "x": 1.0, "y": 1.15, "xanchor": "right", "yanchor": "top"}])
-    return fig
+    hist, bin_edges = np.histogram(data, bins=bins, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    return [go.Scatter(
+        x=bin_centers,
+        y=hist,
+        mode="lines",
+        name=str(uid),
+        line=dict(color=color, width=2),
+        fill="tozeroy",
+        opacity=0.6,
+    )]
 
 
-def _plot_violin(df, ids, id_col, plot_col, mode, wrap):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
+def _build_box_traces(
+    sub: pd.DataFrame,
+    plot_col: str,
+    uid: str,
+    color: str,
+) -> List[go.BaseTraceType]:
+    """Build box plot trace for a single series."""
+    return [go.Box(
+        y=sub[plot_col],
+        name=str(uid),
+        marker=dict(color=color),
+        boxpoints="outliers",
+    )]
 
-    if mode == "overlay":
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Violin(y=sub[plot_col], name=str(uid), line=dict(color=PALETTE[i % len(PALETTE)]), box_visible=True, meanline_visible=True))
-    elif mode == "facet":
-        n = len(ids)
-        cols = wrap or 3
-        rows = ceil(n / cols)
-        fig = make_subplots(rows=rows, cols=cols, subplot_titles=[str(uid) for uid in ids])
-        r, c = 1, 1
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Violin(y=sub[plot_col], name=str(uid), line=dict(color=PALETTE[i % len(PALETTE)]), box_visible=True, meanline_visible=True, showlegend=False), row=r, col=c)
-            c += 1
-            if c > cols:
-                r += 1
-                c = 1
-        fig.update_layout(height=300 * rows)
-    else:
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Violin(y=sub[plot_col], name=str(uid), line=dict(color=PALETTE[i % len(PALETTE)]), box_visible=True, meanline_visible=True, visible=(i == 0), showlegend=False))
-        buttons = [dict(label=str(uid), method="update", args=[{"visible": [j == i for j in range(len(ids))]}]) for i, uid in enumerate(ids)]
-        fig.update_layout(updatemenus=[{"buttons": buttons, "direction": "down", "x": 1.0, "y": 1.15, "xanchor": "right", "yanchor": "top"}])
-    return fig
 
+def _build_violin_traces(
+    sub: pd.DataFrame,
+    plot_col: str,
+    uid: str,
+    color: str,
+) -> List[go.BaseTraceType]:
+    """Build violin plot trace for a single series."""
+    return [go.Violin(
+        y=sub[plot_col],
+        name=str(uid),
+        line=dict(color=color),
+        box_visible=True,
+        meanline_visible=True,
+    )]
+
+
+def _add_dropdown_stats(fig: go.Figure, ids: List[str], stats: Dict) -> None:
+    """Update dropdown buttons to include stats in titles."""
+    if not fig.layout.updatemenus:
+        return
+
+    buttons = fig.layout.updatemenus[0].buttons
+    new_buttons = []
+    for i, uid in enumerate(ids):
+        s = stats[uid]
+        title = f"{uid} | μ={s['mean']:.1f}, σ={s['std']:.1f}, n={s['n']}"
+        btn = dict(buttons[i])
+        btn["args"] = [btn["args"][0], {"title": title}]
+        new_buttons.append(btn)
+
+    fig.update_layout(updatemenus=[{
+        **fig.layout.updatemenus[0].to_plotly_json(),
+        "buttons": new_buttons,
+    }])
+
+
+# =============================================================================
+# SPECIALIZED DISTRIBUTION FUNCTIONS
+# =============================================================================
 
 def plot_skewness(
     profiles: pd.DataFrame,

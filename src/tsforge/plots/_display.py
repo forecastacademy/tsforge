@@ -5,21 +5,21 @@ Unified display modes for tsforge plots.
 Provides a single entry point for rendering traces in overlay, facet, or dropdown mode.
 Eliminates duplicate mode logic across chart files.
 """
+
 from __future__ import annotations
 
 from math import ceil
-from typing import Literal, Dict, List, Any, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from ._styling import PALETTE
-from ._layout import finalize_figure, build_dropdown_buttons
-
+from ._layout import build_dropdown_buttons, finalize_figure
 
 # =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
+
 
 def render_by_mode(
     traces_by_id: Dict[str, List[go.BaseTraceType]],
@@ -93,7 +93,9 @@ def render_by_mode(
     if mode == "overlay":
         fig = _render_overlay(traces_by_id)
     elif mode == "facet":
-        fig = _render_facet(traces_by_id, wrap, shared_xaxes, row_height, col_width, vertical_spacing)
+        fig = _render_facet(
+            traces_by_id, wrap, shared_xaxes, row_height, col_width, vertical_spacing
+        )
     elif mode == "dropdown":
         fig = _render_dropdown(traces_by_id, row_height, col_width)
     else:
@@ -113,6 +115,7 @@ def render_by_mode(
 # =============================================================================
 # MODE IMPLEMENTATIONS
 # =============================================================================
+
 
 def _render_overlay(traces_by_id: Dict[str, List]) -> go.Figure:
     """
@@ -152,7 +155,7 @@ def _render_facet(
         cols=cols,
         shared_xaxes=shared_xaxes,
         vertical_spacing=vertical_spacing,
-        subplot_titles=[str(uid) for uid in ids],
+        subplot_titles=[str(uid).replace("_", " ").title() for uid in ids],
     )
 
     # Track which trace names we've seen for legend deduplication
@@ -164,7 +167,7 @@ def _render_facet(
 
         for trace in traces:
             # Deduplicate legend entries across facets
-            trace_name = getattr(trace, 'name', None)
+            trace_name = getattr(trace, "name", None)
             if trace_name and trace_name in seen_names:
                 trace.showlegend = False
             elif trace_name:
@@ -181,7 +184,9 @@ def _render_facet(
     return fig
 
 
-def _render_dropdown(traces_by_id: Dict[str, List], row_height: int = 400, col_width: Optional[int] = None) -> go.Figure:
+def _render_dropdown(
+    traces_by_id: Dict[str, List], row_height: int = 400, col_width: Optional[int] = None
+) -> go.Figure:
     """
     Single plot with dropdown series selector.
 
@@ -192,7 +197,7 @@ def _render_dropdown(traces_by_id: Dict[str, List], row_height: int = 400, col_w
     trace_map = {}  # {uid: [trace_indices]}
 
     for i, (uid, traces) in enumerate(traces_by_id.items()):
-        visible = (i == 0)  # First series visible by default
+        visible = i == 0  # First series visible by default
         trace_map[uid] = []
 
         for trace in traces:
@@ -206,18 +211,20 @@ def _render_dropdown(traces_by_id: Dict[str, List], row_height: int = 400, col_w
     # Build dropdown buttons
     buttons = build_dropdown_buttons(trace_map, len(fig.data))
     layout_updates = {
-        "updatemenus": [{
-            "buttons": buttons,
-            "direction": "down",
-            "showactive": True,
-            "x": 0.0,
-            "y": 1.12,
-            "xanchor": "left",
-            "yanchor": "top",
-            "bgcolor": "white",
-            "bordercolor": "#ccc",
-            "font": {"size": 12},
-        }],
+        "updatemenus": [
+            {
+                "buttons": buttons,
+                "direction": "down",
+                "showactive": True,
+                "x": 0.0,
+                "y": 1.12,
+                "xanchor": "left",
+                "yanchor": "top",
+                "bgcolor": "white",
+                "bordercolor": "#ccc",
+                "font": {"size": 12},
+            }
+        ],
         "height": row_height,
         "margin": dict(t=80),  # Top margin for dropdown
     }
@@ -231,6 +238,7 @@ def _render_dropdown(traces_by_id: Dict[str, List], row_height: int = 400, col_w
 # =============================================================================
 # CONVENIENCE FUNCTIONS
 # =============================================================================
+
 
 def overlay(traces_by_id: Dict[str, List], **kwargs) -> go.Figure:
     """Shortcut for render_by_mode(..., mode="overlay")."""

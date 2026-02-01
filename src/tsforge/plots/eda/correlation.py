@@ -1,9 +1,14 @@
 # tsforge/plots/eda/correlation.py
-"""ACF/PACF autocorrelation visualization."""
+"""ACF/PACF autocorrelation visualization.
+
+Note: This is a specialized plot with paired ACF/PACF layout that requires
+custom mode handling. Not refactored to use render_by_mode() due to the
+fixed 2-column structure (ACF left, PACF right).
+"""
 from __future__ import annotations
 
 import re
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Literal
 
 import pandas as pd
 import numpy as np
@@ -11,6 +16,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from .._styling import PALETTE, HIGHLIGHT, apply_theme
+from .._layout import finalize_figure
 
 
 def plot_autocorrelation(

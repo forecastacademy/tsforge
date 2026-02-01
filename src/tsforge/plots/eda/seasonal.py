@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
-from math import ceil
 from typing import Union, List, Optional, Literal
 
-from .._styling import PALETTE, HIGHLIGHT, apply_theme, apply_legend
+import plotly.graph_objects as go
+
+from .._styling import PALETTE, HIGHLIGHT
 from .._preprocessing import aggregate_by_group, select_ids
 from .._layout import finalize_figure
+from .._display import render_by_mode
 
 
 def plot_seasonal(
@@ -36,10 +38,49 @@ def plot_seasonal(
 
     Supports monthly, quarterly, weekly, or daily cycles with
     overlay, facet, and dropdown layouts.
-    """
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
 
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data with id, date, and value columns.
+    id_col : str
+        Column identifying each time series.
+    date_col : str
+        Column containing dates/timestamps.
+    value_col : str
+        Column containing values.
+    ids : None, int, str, or list, optional
+        Specific series to plot. If int, plots first N series.
+    group_col : str or list, optional
+        Column(s) to group by before plotting.
+    agg : str, default "sum"
+        Aggregation function for grouping.
+    seasonal_agg : str, default "mean"
+        Aggregation within seasonal periods.
+    freq : str, default "M"
+        Seasonal frequency: "M" (monthly), "Q" (quarterly), "W" (weekly), "D" (daily).
+    mode : {"overlay", "facet", "dropdown"}, default "overlay"
+        Display mode for multiple series.
+    kind : {"line", "box"}, default "line"
+        Chart type.
+    normalize : bool, default False
+        Normalize values by yearly mean.
+    show_mean : bool, default False
+        Show mean seasonal profile (line kind only).
+    wrap : int, optional
+        Columns for facet mode (default: 1).
+    theme : str, default "fa"
+        Theme name.
+    style : dict, optional
+        Style overrides.
+    engine : str, default "plotly"
+        Plotting engine (only "plotly" supported).
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure object.
+    """
     if engine != "plotly":
         raise NotImplementedError("Only Plotly engine is supported.")
 
@@ -90,177 +131,102 @@ def plot_seasonal(
             .mean().reset_index()
         )
 
-    # Build plot based on kind and mode
-    if kind == "box":
-        fig = _plot_box(df, ids, id_col, value_col, x_labels, mode, wrap)
-    else:
-        fig = _plot_line(df, ids, id_col, value_col, x_labels, mode, wrap,
-                         show_mean, mean_df)
+    # Build year-to-color mapping for consistent colors
+    unique_years = sorted(df["year"].unique())
+    year_colors = {yr: PALETTE[i % len(PALETTE)] for i, yr in enumerate(unique_years)}
+
+    # Build traces for each series
+    traces_by_id = {}
+    for i, uid in enumerate(ids):
+        sub = df[df[id_col] == uid]
+        is_first = (i == 0)
+
+        if kind == "box":
+            traces_by_id[uid] = _build_box_traces(sub, uid, value_col)
+        else:
+            mean_sub = mean_df[mean_df[id_col] == uid] if mean_df is not None else None
+            traces_by_id[uid] = _build_line_traces(
+                sub, uid, value_col, mean_sub, show_mean,
+                year_colors, is_first,
+            )
+
+    # Render using unified display module
+    fig = render_by_mode(
+        traces_by_id,
+        mode=mode,
+        wrap=wrap or 1,
+        theme=theme,
+        style=style,
+        finalize=False,
+    )
+
+    # Apply x-axis labels
+    if x_labels:
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=list(range(1, len(x_labels) + 1)),
+            ticktext=x_labels,
+        )
 
     fig.update_yaxes(title_text=y_axis_label)
 
     return finalize_figure(fig, theme, style)
 
 
-def _plot_box(df, ids, id_col, value_col, x_labels, mode, wrap):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
-    if mode == "overlay":
-        fig = go.Figure()
-        for uid in ids:
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Box(
-                x=sub["seasonal_x"], y=sub[value_col],
-                name=str(uid), boxpoints="all", jitter=0.2, pointpos=0,
-                marker=dict(opacity=0.6, size=4, color=HIGHLIGHT),
-            ))
-    elif mode == "facet":
-        n = len(ids)
-        cols = wrap or 1
-        rows = ceil(n / cols)
-        fig = make_subplots(rows=rows, cols=cols, subplot_titles=[str(i) for i in ids])
-        r, c = 1, 1
-        for uid in ids:
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Box(
-                x=sub["seasonal_x"], y=sub[value_col], name=str(uid),
-                boxpoints="all", jitter=0.2, showlegend=False,
-                marker=dict(opacity=0.6, size=4, color=HIGHLIGHT),
-            ), row=r, col=c)
-            c += 1
-            if c > cols:
-                r += 1
-                c = 1
-    else:  # dropdown
-        fig = go.Figure()
-        for i, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            fig.add_trace(go.Box(
-                x=sub["seasonal_x"], y=sub[value_col], name=str(uid),
-                boxpoints="all", jitter=0.2, visible=(i == 0), showlegend=False,
-                marker=dict(opacity=0.6, size=4, color=HIGHLIGHT),
-            ))
-        buttons = [
-            dict(label=str(uid), method="update",
-                 args=[{"visible": [j == i for j in range(len(ids))]}])
-            for i, uid in enumerate(ids)
-        ]
-        fig.update_layout(updatemenus=[{
-            "buttons": buttons, "direction": "down",
-            "x": 1.0, "y": 1.15, "xanchor": "right", "yanchor": "top",
-        }])
-
-    if x_labels:
-        fig.update_xaxes(tickmode="array", tickvals=list(range(1, len(x_labels) + 1)), ticktext=x_labels)
-    return fig
+def _build_box_traces(
+    sub: pd.DataFrame,
+    uid: str,
+    value_col: str,
+) -> List[go.BaseTraceType]:
+    """Build box plot traces for a single series."""
+    return [go.Box(
+        x=sub["seasonal_x"],
+        y=sub[value_col],
+        name=str(uid),
+        boxpoints="all",
+        jitter=0.2,
+        pointpos=0,
+        marker=dict(opacity=0.6, size=4, color=HIGHLIGHT),
+    )]
 
 
-def _plot_line(df, ids, id_col, value_col, x_labels, mode, wrap, show_mean, mean_df):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
+def _build_line_traces(
+    sub: pd.DataFrame,
+    uid: str,
+    value_col: str,
+    mean_sub: Optional[pd.DataFrame],
+    show_mean: bool,
+    year_colors: dict,
+    is_first: bool,
+) -> List[go.BaseTraceType]:
+    """Build line traces for a single series (one trace per year + optional mean)."""
+    traces = []
     opacity = 0.35 if show_mean else 0.9
     show_year_legend = not show_mean
 
-    if mode == "overlay":
-        fig = go.Figure()
-        for uid in ids:
-            sub = df[df[id_col] == uid]
-            for j, (yr, g) in enumerate(sub.groupby("year")):
-                g = g.sort_values("seasonal_x")
-                is_first = (uid == ids[0])
-                fig.add_trace(go.Scatter(
-                    x=g["seasonal_x"], y=g[value_col], mode="lines+markers",
-                    name=str(yr), legendgroup=str(yr),
-                    line=dict(color=PALETTE[j % len(PALETTE)], width=2),
-                    opacity=opacity, showlegend=show_year_legend and is_first,
-                ))
-            if show_mean and mean_df is not None:
-                m = mean_df[mean_df[id_col] == uid].sort_values("seasonal_x")
-                fig.add_trace(go.Scatter(
-                    x=m["seasonal_x"], y=m[value_col], mode="lines",
-                    name="Mean" if len(ids) == 1 else f"{uid} mean",
-                    line=dict(color="black", width=4, dash="dash"),
-                ))
-    elif mode == "facet":
-        n = len(ids)
-        cols = wrap or 1
-        rows = ceil(n / cols)
-        fig = make_subplots(rows=rows, cols=cols, subplot_titles=[str(i) for i in ids], shared_xaxes=True)
-        years_in_legend = set()
-        r, c = 1, 1
-        for uid in ids:
-            sub = df[df[id_col] == uid]
-            for j, (yr, g) in enumerate(sub.groupby("year")):
-                g = g.sort_values("seasonal_x")
-                add_legend = show_year_legend and (yr not in years_in_legend)
-                if add_legend:
-                    years_in_legend.add(yr)
-                fig.add_trace(go.Scatter(
-                    x=g["seasonal_x"], y=g[value_col], mode="lines+markers",
-                    name=str(yr), legendgroup=str(yr),
-                    line=dict(color=PALETTE[j % len(PALETTE)], width=2),
-                    opacity=opacity, showlegend=add_legend,
-                ), row=r, col=c)
-            if show_mean and mean_df is not None:
-                m = mean_df[mean_df[id_col] == uid].sort_values("seasonal_x")
-                show_mean_legend = (r == 1 and c == 1)
-                fig.add_trace(go.Scatter(
-                    x=m["seasonal_x"], y=m[value_col], mode="lines",
-                    name="Mean", legendgroup="mean",
-                    line=dict(color="black", width=4, dash="dash"),
-                    showlegend=show_mean_legend,
-                ), row=r, col=c)
-            c += 1
-            if c > cols:
-                r += 1
-                c = 1
-    else:  # dropdown
-        fig = go.Figure()
-        trace_counts = []
-        unique_years = sorted(df["year"].unique())
-        year_to_idx = {yr: i for i, yr in enumerate(unique_years)}
-        for idx, uid in enumerate(ids):
-            sub = df[df[id_col] == uid]
-            local_count = 0
-            for j, (yr, g) in enumerate(sub.groupby("year")):
-                g = g.sort_values("seasonal_x")
-                color_idx = year_to_idx.get(yr, j)
-                is_first = (idx == 0)
-                fig.add_trace(go.Scatter(
-                    x=g["seasonal_x"], y=g[value_col], mode="lines+markers",
-                    name=str(yr), legendgroup=str(yr),
-                    line=dict(color=PALETTE[color_idx % len(PALETTE)], width=2),
-                    opacity=opacity, visible=(idx == 0),
-                    showlegend=show_year_legend and is_first,
-                ))
-                local_count += 1
-            if show_mean and mean_df is not None:
-                m = mean_df[mean_df[id_col] == uid].sort_values("seasonal_x")
-                fig.add_trace(go.Scatter(
-                    x=m["seasonal_x"], y=m[value_col], mode="lines",
-                    name="Mean", legendgroup="mean",
-                    line=dict(color="black", width=4, dash="dash"),
-                    visible=(idx == 0), showlegend=(idx == 0),
-                ))
-                local_count += 1
-            trace_counts.append(local_count)
+    for yr, g in sub.groupby("year"):
+        g = g.sort_values("seasonal_x")
+        traces.append(go.Scatter(
+            x=g["seasonal_x"],
+            y=g[value_col],
+            mode="lines+markers",
+            name=str(yr),
+            legendgroup=str(yr),
+            line=dict(color=year_colors.get(yr, PALETTE[0]), width=2),
+            opacity=opacity,
+            showlegend=show_year_legend and is_first,
+        ))
 
-        buttons = []
-        total = sum(trace_counts)
-        start = 0
-        for i, uid in enumerate(ids):
-            visible = [False] * total
-            for k in range(start, start + trace_counts[i]):
-                visible[k] = True
-            buttons.append(dict(label=str(uid), method="update", args=[{"visible": visible}]))
-            start += trace_counts[i]
-        fig.update_layout(updatemenus=[{
-            "buttons": buttons, "direction": "down",
-            "x": 1.0, "y": 1.15, "xanchor": "right", "yanchor": "top",
-        }])
+    if show_mean and mean_sub is not None and len(mean_sub) > 0:
+        m = mean_sub.sort_values("seasonal_x")
+        traces.append(go.Scatter(
+            x=m["seasonal_x"],
+            y=m[value_col],
+            mode="lines",
+            name="Mean",
+            legendgroup="mean",
+            line=dict(color="black", width=4, dash="dash"),
+            showlegend=is_first,
+        ))
 
-    if x_labels:
-        fig.update_xaxes(tickmode="array", tickvals=list(range(1, len(x_labels) + 1)), ticktext=x_labels)
-    return fig
+    return traces
