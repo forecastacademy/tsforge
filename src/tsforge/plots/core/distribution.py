@@ -272,6 +272,24 @@ def plot_distribution(
     ...     show_threshold_pct=True,
     ... )
     """
+    # --- Pre-aggregate: columns + id_col + value_col → groupby then metric mode ---
+    # Lets callers write:
+    #   plot_distribution(weekly_df, columns='n_weeks',
+    #                     id_col='unique_id', value_col='ds', agg='nunique')
+    # instead of manually computing the groupby first.
+    if columns is not None and id_col is not None and value_col is not None:
+        cols = columns if isinstance(columns, list) else [columns]
+        agg_map = {}
+        for col in cols:
+            if col not in df.columns:
+                agg_map[col] = (value_col, agg)
+        if agg_map:
+            df = df.groupby(id_col).agg(**agg_map).reset_index()
+        # Fall through to metric mode
+        id_col = None
+        date_col = None
+        value_col = None
+
     # Determine mode based on parameters
     if columns is not None:
         return _plot_metric_distribution(
