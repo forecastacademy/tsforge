@@ -12,9 +12,10 @@ from typing import Union, List, Optional, Literal, Dict
 
 import plotly.graph_objects as go
 
-from .._styling import PALETTE, apply_theme
+from .._styling import PALETTE, apply_theme, resolve_color
 from .._layout import finalize_figure
 from .._display import render_by_mode
+from .._preprocessing import select_ids
 
 
 def plot_bar(
@@ -165,30 +166,17 @@ def plot_bar(
 
     # Select categories
     unique_cats = agg_df[effective_id_col].unique().tolist()
-    if ids is not None:
-        if isinstance(ids, int):
-            unique_cats = unique_cats[:ids]
-        elif isinstance(ids, str):
-            unique_cats = [ids]
-        else:
-            unique_cats = [c for c in ids if c in unique_cats]
-    elif top_n is not None:
+    if top_n is not None:
         unique_cats = unique_cats[:top_n]
     else:
-        unique_cats = unique_cats[:max_ids]
+        unique_cats = select_ids(agg_df, effective_id_col, ids, max_ids)
 
     agg_df = agg_df[agg_df[effective_id_col].isin(unique_cats)]
-
-    # Normalize colors
-    if isinstance(colors, str):
-        color_map = {effective_id_col: colors}
-    else:
-        color_map = colors or {}
 
     # Build traces
     if color_col is None:
         # Single bar series
-        color = color_map.get(effective_id_col, PALETTE[0])
+        color = resolve_color(colors, effective_id_col, 0)
         traces_by_id = {"data": _build_bar_traces(
             agg_df, effective_id_col, value_col, orientation, show_values, value_format, color, value_col
         )}
@@ -199,7 +187,7 @@ def plot_bar(
         traces_by_id = {}
         for i, gval in enumerate(unique_groups):
             sub = agg_df[agg_df[color_col] == gval]
-            c = color_map.get(gval, PALETTE[i % len(PALETTE)])
+            c = resolve_color(colors, gval, i)
             traces_by_id[str(gval)] = _build_bar_traces(
                 sub, effective_id_col, value_col, orientation, show_values, value_format, c, str(gval)
             )

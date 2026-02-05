@@ -1,4 +1,5 @@
 # tsforge/plots/core/timeseries.py
+# tsforge/plots/core/timeseries.py
 """
 Unified time series plotter for tsforge.
 
@@ -79,6 +80,8 @@ def plot_timeseries(
     anomalies: Union[pd.DataFrame, str, None] = None,
     anomaly_flag_value: int = 1,
     anomalies_config: Optional[dict] = None,
+    # Trace-level styling (for panel composition)
+    trace_style: Optional[dict] = None,
     # Display
     mode: Literal["overlay", "facet", "dropdown"] = "overlay",
     wrap: int = 2,
@@ -163,6 +166,32 @@ def plot_timeseries(
         Value indicating anomaly in a numeric column.
     anomalies_config : dict, optional
         Anomaly styling: {"color": str, "marker_symbol": str, "marker_size": int}.
+
+    Trace-Level Styling
+    -------------------
+    trace_style : dict, optional
+        Override line/fill properties on the actuals trace. Useful when
+        composing panels via ``plot_panel`` where each row needs a
+        different visual treatment.
+
+        Supported keys:
+
+        - **line_color** (str): Override the line color.
+        - **line_width** (float): Override the line width.
+        - **opacity** (float): Line opacity, e.g. ``0.5``.
+        - **fill** (str): Plotly fill mode, e.g. ``"tozeroy"``.
+        - **fillcolor** (str): Fill color, e.g. ``"rgba(46,134,171,0.15)"``.
+        - **mode** (str): Trace mode, e.g. ``"lines+markers"``.
+
+        Example — thin translucent daily line + filled weekly area::
+
+            plot_panel([
+                plot_timeseries(daily_df, ...,
+                    trace_style={'line_width': 0.8, 'opacity': 0.5}),
+                plot_timeseries(weekly_df, ...,
+                    trace_style={'fill': 'tozeroy',
+                                 'fillcolor': 'rgba(46,134,171,0.15)'}),
+            ])
 
     Display
     -------
@@ -355,6 +384,7 @@ def plot_timeseries(
             anomalies_config=anomalies_config,
             color_index=i,
             n_series=len(selected_ids),
+            trace_style=trace_style,
         )
 
     # Auto-generate title for archetype filtering
@@ -406,6 +436,7 @@ def _build_series_traces(
     anomalies_config: Optional[dict],
     color_index: int,
     n_series: int,
+    trace_style: Optional[dict] = None,
 ) -> List[go.BaseTraceType]:
     """
     Build all traces for a single series.
@@ -457,13 +488,36 @@ def _build_series_traces(
                 ))
 
     # 2. Actuals line
+    ts = trace_style or {}
+    actual_color = ts.get("line_color", color)
+    actual_width = ts.get("line_width", line_width)
+    actual_opacity = ts.get("opacity", None)
+    actual_mode = ts.get("mode", "lines")
+
+    actual_line = dict(color=actual_color, width=actual_width)
+
     traces.append(go.Scatter(
         x=df_sub[date_col],
         y=df_sub[value_col],
-        mode="lines",
+        mode=actual_mode,
         name=str(uid),
-        line=dict(color=color, width=line_width),
+        line=actual_line,
+        opacity=actual_opacity,
     ))
+
+    # 2b. Optional area fill (separate trace so the line stays crisp on top)
+    fill_mode = ts.get("fill")
+    if fill_mode:
+        fill_color = ts.get("fillcolor", hex_to_rgba(actual_color, 0.15))
+        traces.append(go.Scatter(
+            x=df_sub[date_col],
+            y=df_sub[value_col],
+            fill=fill_mode,
+            fillcolor=fill_color,
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo="skip",
+        ))
 
     # 3. Forecast line
     if fcst_df is not None and len(fcst_df) > 0:

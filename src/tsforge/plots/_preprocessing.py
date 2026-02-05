@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List, Tuple, Dict
 
 
 # =============================================================================
@@ -279,3 +279,84 @@ def pi_column_names(
     lo = lo_pattern.format(col=forecast_value_col, level=level)
     hi = hi_pattern.format(col=forecast_value_col, level=level)
     return lo, hi
+
+
+# =============================================================================
+# GROUP COLUMN RESOLUTION (shared by scatter, distribution, bar)
+# =============================================================================
+
+def resolve_group_col(
+    df: pd.DataFrame,
+    group_col: Optional[Union[str, List[str]]],
+) -> Tuple[pd.DataFrame, Optional[str]]:
+    """
+    Resolve a group_col (str or list) into a single effective column.
+
+    If group_col is a list, creates a combined '_group' column by joining
+    the string values. Returns (df, effective_col) where effective_col is
+    None if group_col is None.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data (copied only if a combined column is needed).
+    group_col : str, list of str, or None
+        Column(s) to resolve.
+
+    Returns
+    -------
+    tuple of (pd.DataFrame, str or None)
+        The (possibly modified) DataFrame and the effective column name.
+    """
+    if group_col is None:
+        return df, None
+    if isinstance(group_col, str):
+        return df, group_col
+    # List of columns — combine into a single column
+    df = df.copy()
+    df["_group"] = df[list(group_col)].astype(str).agg(" | ".join, axis=1)
+    return df, "_group"
+
+
+# =============================================================================
+# QUANTILE CLIPPING (shared by scatter, distribution)
+# =============================================================================
+
+def clip_by_quantile(
+    df: pd.DataFrame,
+    columns: Union[str, List[str]],
+    quantile: Union[float, Dict[str, Optional[float]]],
+) -> pd.DataFrame:
+    """
+    Clip DataFrame rows to a symmetric quantile range per column.
+
+    For a quantile of 0.95, keeps rows where column values fall within
+    the [5th, 95th] percentile range.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data.
+    columns : str or list of str
+        Column(s) to clip by.
+    quantile : float or dict
+        If float, applied to all columns. If dict, maps column names
+        to quantile values (None entries are skipped).
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame.
+    """
+    if isinstance(columns, str):
+        columns = [columns]
+    if isinstance(quantile, (int, float)):
+        quantile = {c: float(quantile) for c in columns}
+
+    for col in columns:
+        q = quantile.get(col)
+        if q is not None and col in df.columns:
+            lower = df[col].quantile(1 - q)
+            upper = df[col].quantile(q)
+            df = df[(df[col] >= lower) & (df[col] <= upper)]
+    return df

@@ -17,7 +17,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from .._display import render_by_mode
-from .._preprocessing import aggregate_by_group, select_ids
+from .._preprocessing import aggregate_by_group, select_ids, resolve_group_col
 from .._styling import PALETTE
 
 # Metric configuration for auto-defaults
@@ -160,14 +160,26 @@ def plot_distribution(
     """
     Unified distribution visualization.
 
-    Supports two modes:
-    1. **Time series mode**: Distribution of values for specific series (use id_col, date_col, value_col)
-    2. **Metric mode**: Distribution of metrics across all series (use columns parameter)
+    Supports three modes:
+    1. **Metric mode**: Distribution of pre-computed metrics across series (use columns)
+    2. **Time series mode**: Distribution of values for specific series (use id_col, date_col, value_col)
+    3. **Aggregated mode**: Distribution of a per-series statistic (use id_col, value_col, agg without date_col)
 
     Parameters
     ----------
     df : pd.DataFrame
         Input data.
+
+    Aggregated Mode (per-series statistics)
+    ---------------------------------------
+    Use when you want to compute a statistic per series and plot its distribution.
+    Provide id_col and value_col (without date_col).
+    
+    Example: Series length distribution
+        >>> plot_distribution(df, id_col='unique_id', value_col='ds', agg='nunique')
+    
+    Example: Total volume distribution  
+        >>> plot_distribution(df, id_col='unique_id', value_col='y', agg='sum')
 
     Time Series Mode
     ----------------
@@ -186,7 +198,7 @@ def plot_distribution(
         - Time series mode: aggregates data by group_col before plotting
         - Metric mode: use with facet_by/dropdown_by to control layout
     agg : str, default "sum"
-        Aggregation function for grouping.
+        Aggregation function for grouping/aggregation.
     freq : str, optional
         Resample to this frequency (e.g., "W", "M").
 
@@ -321,6 +333,7 @@ def plot_distribution(
             style=style,
         )
     elif id_col is not None and date_col is not None and value_col is not None:
+        # Time series mode: distribution of values for specific series
         return _plot_timeseries_distribution(
             df=df,
             id_col=id_col,
@@ -340,10 +353,29 @@ def plot_distribution(
             theme=theme,
             style=style,
         )
+    elif id_col is not None and value_col is not None and date_col is None:
+        # Aggregated distribution mode: compute per-series stat, plot distribution
+        return _plot_aggregated_distribution(
+            df=df,
+            id_col=id_col,
+            value_col=value_col,
+            agg=agg,
+            kind=kind,
+            bins=bins,
+            log_scale=log_scale,
+            exclude_zeros=exclude_zeros,
+            show_median=show_median,
+            show_mean=show_mean,
+            show_stats=show_stats,
+            theme=theme,
+            style=style,
+        )
     else:
         raise ValueError(
-            "Must provide either 'columns' (metric mode) or "
-            "'id_col', 'date_col', 'value_col' (time series mode)"
+            "Must provide either:\n"
+            "  - 'columns' (metric mode)\n"
+            "  - 'id_col', 'date_col', 'value_col' (time series mode)\n"
+            "  - 'id_col', 'value_col' without 'date_col' (aggregated distribution mode)"
         )
 
 
@@ -740,11 +772,7 @@ def _plot_metric_distribution_facet_dropdown(
     from .._layout import finalize_figure
 
     # Handle list of group columns
-    effective_group_col = group_col
-    if isinstance(group_col, list):
-        df = df.copy()
-        df["_group"] = df[group_col].astype(str).agg(" | ".join, axis=1)
-        effective_group_col = "_group"
+    df, effective_group_col = resolve_group_col(df, group_col)
 
     groups = sorted(df[effective_group_col].dropna().unique())
 
@@ -1164,11 +1192,7 @@ def _plot_metric_distribution_grouped(
     """Plot distribution of metrics grouped by color_col (overlaid histograms per group)."""
 
     # Handle list of color columns by creating a combined column
-    effective_color_col = color_col
-    if isinstance(color_col, list):
-        df = df.copy()
-        df["_color_group"] = df[color_col].astype(str).agg(" | ".join, axis=1)
-        effective_color_col = "_color_group"
+    df, effective_color_col = resolve_group_col(df, color_col)
 
     groups = sorted(df[effective_color_col].dropna().unique())
 
@@ -1446,4 +1470,157 @@ def _plot_timeseries_distribution(
     else:
         fig.update_yaxes(title_text=x_label)
 
+    return fig
+
+
+def _plot_aggregated_distribution(
+    df: pd.DataFrame,
+    id_col: str,
+    value_col: str,
+    agg: str,
+    kind: str,
+    bins: int,
+    log_scale: bool,
+    exclude_zeros: bool,
+    show_median: bool,
+    show_mean: bool,
+    show_stats: bool,
+    theme: str,
+    style: Optional[dict],
+) -> go.Figure:
+    """
+    Plot distribution of a per-series aggregated statistic.
+    
+    Computes agg(value_col) grouped by id_col, then plots the distribution
+    of those aggregated values across all series.
+    
+    Example: nunique of dates per series = series length distribution
+    """
+    from .._styling import THEMES
+    
+    # Compute per-series aggregation
+    agg_values = df.groupby(id_col)[value_col].agg(agg)
+    
+    if exclude_zeros:
+        agg_values = agg_values[agg_values > 0]
+    
+    if log_scale:
+        agg_values = np.log1p(agg_values.clip(lower=0))
+    
+    # Get theme
+    t = THEMES.get(theme, THEMES["fa"])
+    color = t.get("line_color", PALETTE[0])
+    
+    # Build figure
+    fig = go.Figure()
+    
+    if kind == "histogram":
+        fig.add_trace(go.Histogram(
+            x=agg_values,
+            nbinsx=bins,
+            marker=dict(color=color, line=dict(color="white", width=0.5)),
+            opacity=0.85,
+        ))
+    elif kind == "density":
+        if len(agg_values) >= 2:
+            hist, bin_edges = np.histogram(agg_values.dropna(), bins=bins, density=True)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            fig.add_trace(go.Scatter(
+                x=bin_centers,
+                y=hist,
+                mode="lines",
+                line=dict(color=color, width=2),
+                fill="tozeroy",
+                opacity=0.6,
+            ))
+    elif kind == "box":
+        fig.add_trace(go.Box(
+            y=agg_values,
+            marker=dict(color=color),
+            boxpoints="outliers",
+        ))
+    elif kind == "violin":
+        fig.add_trace(go.Violin(
+            y=agg_values,
+            line=dict(color=color),
+            box_visible=True,
+            meanline_visible=True,
+        ))
+    else:
+        raise ValueError("kind must be one of: histogram, density, box, violin")
+    
+    # Add mean/median lines for histogram/density
+    if kind in ["histogram", "density"]:
+        if show_mean:
+            mean_val = agg_values.mean()
+            fig.add_vline(
+                x=mean_val,
+                line_dash="dash",
+                line_color="#e74c3c",
+                line_width=2,
+                annotation_text=f"Mean: {mean_val:.1f}",
+                annotation_position="top",
+            )
+        if show_median:
+            median_val = agg_values.median()
+            fig.add_vline(
+                x=median_val,
+                line_dash="dot",
+                line_color="#3498db",
+                line_width=2,
+                annotation_text=f"Median: {median_val:.1f}",
+                annotation_position="top",
+            )
+    
+    # Apply theme and style
+    layout_updates = {
+        "template": t.get("template", "plotly_white"),
+        "font": dict(family=t.get("font_family", "Arial")),
+        "showlegend": False,
+    }
+    
+    # Axis labels
+    x_label = f"{agg}({value_col})"
+    if log_scale:
+        x_label = f"log({x_label})"
+    
+    if kind in ["histogram", "density"]:
+        layout_updates["xaxis_title"] = x_label
+        layout_updates["yaxis_title"] = "Frequency" if kind == "histogram" else "Density"
+    else:
+        layout_updates["yaxis_title"] = x_label
+    
+    # Apply style overrides
+    if style:
+        if "title" in style:
+            layout_updates["title"] = dict(text=style["title"], x=0.5)
+        if "x_title" in style:
+            layout_updates["xaxis_title"] = style["x_title"]
+        if "y_title" in style:
+            layout_updates["yaxis_title"] = style["y_title"]
+    
+    fig.update_layout(**layout_updates)
+    
+    # Add stats annotation if requested
+    if show_stats:
+        stats_text = (
+            f"n={len(agg_values):,}<br>"
+            f"mean={agg_values.mean():.1f}<br>"
+            f"median={agg_values.median():.1f}<br>"
+            f"std={agg_values.std():.1f}"
+        )
+        fig.add_annotation(
+            x=0.98, y=0.98,
+            xref="paper", yref="paper",
+            text=stats_text,
+            showarrow=False,
+            font=dict(size=10),
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#ddd",
+            borderwidth=1,
+            borderpad=4,
+            xanchor="right",
+            yanchor="top",
+        )
+    
     return fig

@@ -10,6 +10,7 @@ Contains:
 """
 from __future__ import annotations
 
+import re
 from typing import List, Dict, Any, Optional, Callable
 
 import plotly.graph_objects as go
@@ -29,83 +30,117 @@ def finalize_figure(
     base_margin_bottom: int = 60,
 ) -> go.Figure:
     """
-    Apply theme, style overrides, and auto-calculate legend margins.
+    Apply theme, style overrides, legend behavior, and legend positioning.
 
-    This replaces ~30 lines of duplicated code across chart files.
-
-    Parameters
-    ----------
-    fig : go.Figure
-        The Plotly figure to finalize.
-    theme : str
-        Theme name (fa, mckinsey, minimal, dark, seaborn, ggplot).
-    style : dict, optional
-        Style overrides with keys: title, subtitle, x_title, y_title, y_range.
-    base_margin_bottom : int
-        Base bottom margin before legend rows are added.
-
-    Returns
-    -------
-    go.Figure
-        The finalized figure.
+    Global behavior:
+    - If the figure would have 0–1 legend items, hide the legend.
+    - If exactly 1 legend item and no subtitle provided, show that label as a subtitle.
+    - Optional: enforce legend ordering (alpha or numeric) via style["legend_order"].
     """
+    style = dict(style) if style else {}
+
     # Capture any existing height/width before applying theme
     existing_height = fig.layout.height
     existing_width = fig.layout.width
-    
+
     fig = apply_theme(fig, theme)
 
-    if style:
-        if "title" in style:
-            fig.update_layout(title={"text": style["title"], "font": {"size": 18}})
-        if "subtitle" in style:
-            fig.add_annotation(
-                x=0, y=1.06,
-                xref="paper", yref="paper",
-                text=style["subtitle"],
-                showarrow=False,
-                font=dict(size=13, color="#444"),
-            )
-        if "x_title" in style:
-            fig.update_xaxes(title_text=style["x_title"])
-        if "y_title" in style:
-            fig.update_yaxes(title_text=style["y_title"])
-        if "y_range" in style:
-            fig.update_yaxes(range=style["y_range"])
-        # Allow callers to pass height/width through style dict
-        if "height" in style:
-            try:
-                existing_height = int(style["height"])
-            except Exception:
-                pass
-        if "width" in style:
-            try:
-                existing_width = int(style["width"])
-            except Exception:
-                pass
+    # -------------------------
+    # Style overrides (pre-legend)
+    # -------------------------
+    if "title" in style:
+        fig.update_layout(title={"text": style["title"], "font": {"size": 18}})
 
+    if "subtitle" in style:
+        _upsert_subtitle(fig, str(style["subtitle"]))
+
+    if "x_title" in style:
+        fig.update_xaxes(title_text=style["x_title"])
+
+    if "y_title" in style:
+        fig.update_yaxes(title_text=style["y_title"])
+
+    if "y_range" in style:
+        fig.update_yaxes(range=style["y_range"])
+
+    # Allow callers to pass height/width through style dict
+    if "height" in style:
+        try:
+            existing_height = int(style["height"])
+        except Exception:
+            pass
+    if "width" in style:
+        try:
+            existing_width = int(style["width"])
+        except Exception:
+            pass
+
+    # Apply theme-aware legend defaults
     fig = apply_legend(fig, theme)
 
-    # Auto-calculate legend rows and bottom margin
-    num_legend_items = sum(1 for trace in fig.data if getattr(trace, 'showlegend', True))
-    legend_rows = max(1, (num_legend_items + 5) // 6)
-    bottom_margin = base_margin_bottom + (legend_rows * 25)
+    # -------------------------
+    # Legend suppression + subtitle defaulting
+    # -------------------------
+    user_forced_showlegend = "showlegend" in style
+    user_provided_subtitle = "subtitle" in style
+
+    if user_forced_showlegend:
+        fig.update_layout(showlegend=bool(style["showlegend"]))
+
+    if not user_forced_showlegend:
+        single_label = _get_single_legend_label(fig)
+        if single_label is not None:
+            fig.update_layout(showlegend=False)
+            for tr in fig.data:
+                tr.showlegend = False
+            if not user_provided_subtitle:
+                _upsert_subtitle(fig, single_label)
+        else:
+            if _count_distinct_legend_labels(fig) == 0:
+                fig.update_layout(showlegend=False)
+                for tr in fig.data:
+                    tr.showlegend = False
+
+    # -------------------------
+    # Legend ordering (alpha / numeric)
+    # -------------------------
+    legend_order = style.get("legend_order", "alpha")
+    if legend_order:
+        apply_legend_order(fig, order=str(legend_order))
+
+    # -------------------------
+    # Determine legend position from style override or theme
+    # -------------------------
+    t = THEMES.get(theme, THEMES["fa"])
+    legend_pos = t.get("legend_position", "top right")
+    if "legend_position" in style:
+        legend_pos = style["legend_position"]
+
+    showlegend = fig.layout.showlegend
+    if showlegend is False:
+        legend_layout, margin_bottom = {}, base_margin_bottom
+    else:
+        legend_layout, margin_bottom = _resolve_legend_position(
+            legend_pos, fig, base_margin_bottom
+        )
+
+    # -------------------------
+    # Merge margins (allow style["margin"] overrides)
+    # -------------------------
+    user_margin = {}
+    if isinstance(style.get("margin"), dict):
+        user_margin = dict(style["margin"])
+
+    final_margin = dict(b=margin_bottom)
+    final_margin.update(user_margin)  # user can override b too if they want
 
     # Build final layout update, preserving existing height/width
-    final_layout = {
-        "legend": dict(
-            orientation='h',
-            x=0.5,
-            y=-0.12,
-            xanchor='center',
-            yanchor='top',
-            bgcolor='rgba(255,255,255,0.9)',
-            bordercolor='rgba(0,0,0,0.1)',
-            borderwidth=1,
-        ),
-        "margin": dict(b=bottom_margin),
+    final_layout: Dict[str, Any] = {
+        "margin": final_margin,
     }
-    
+    if legend_layout:
+        final_layout["legend"] = legend_layout
+
     # Restore height/width if they were set
     if existing_height is not None:
         final_layout["height"] = existing_height
@@ -113,8 +148,193 @@ def finalize_figure(
         final_layout["width"] = existing_width
 
     fig.update_layout(**final_layout)
-
     return fig
+
+
+def _get_single_legend_label(fig: go.Figure) -> Optional[str]:
+    """Return the sole distinct legend label if exactly 1 legend item would render."""
+    labels = set()
+
+    for tr in fig.data:
+        if getattr(tr, "showlegend", True) is False:
+            continue
+        if getattr(tr, "visible", True) is False:
+            continue
+
+        name = getattr(tr, "name", None)
+        if name is None:
+            continue
+        name = str(name).strip()
+        if not name:
+            continue
+
+        labels.add(name)
+        if len(labels) > 1:
+            return None
+
+    return next(iter(labels)) if len(labels) == 1 else None
+
+
+def _count_distinct_legend_labels(fig: go.Figure) -> int:
+    """Count distinct, meaningful legend labels that would render."""
+    labels = set()
+    for tr in fig.data:
+        if getattr(tr, "showlegend", True) is False:
+            continue
+        if getattr(tr, "visible", True) is False:
+            continue
+        name = getattr(tr, "name", None)
+        if name is None:
+            continue
+        name = str(name).strip()
+        if not name:
+            continue
+        labels.add(name)
+        if len(labels) > 2:
+            break
+    return len(labels)
+
+
+def _upsert_subtitle(fig: go.Figure, subtitle: str) -> None:
+    """Add/replace a subtitle annotation under the main title."""
+    if not subtitle:
+        return
+
+    existing = list(getattr(fig.layout, "annotations", []) or [])
+    existing = [a for a in existing if getattr(a, "name", None) != "tsforge_subtitle"]
+
+    existing.append(
+        dict(
+            name="tsforge_subtitle",
+            x=0,
+            y=1.06,
+            xref="paper",
+            yref="paper",
+            text=subtitle,
+            showarrow=False,
+            font=dict(size=13, color="#444"),
+            align="left",
+        )
+    )
+
+    fig.update_layout(annotations=existing)
+
+
+def _resolve_legend_position(
+    position: str,
+    fig: go.Figure,
+    base_margin_bottom: int,
+) -> tuple:
+    """Convert a legend position string to Plotly legend dict + bottom margin."""
+    pos = position.lower().strip()
+
+    base_style = dict(
+        bgcolor="rgba(255,255,255,0.9)",
+        bordercolor="rgba(0,0,0,0.1)",
+        borderwidth=1,
+    )
+
+    if pos == "top right":
+        return {
+            **base_style,
+            "yanchor": "top", "y": 0.98,
+            "xanchor": "right", "x": 0.98,
+        }, base_margin_bottom
+
+    if pos == "top left":
+        return {
+            **base_style,
+            "yanchor": "top", "y": 0.98,
+            "xanchor": "left", "x": 0.02,
+        }, base_margin_bottom
+
+    if pos == "bottom right":
+        return {
+            **base_style,
+            "yanchor": "bottom", "y": 0.02,
+            "xanchor": "right", "x": 0.98,
+        }, base_margin_bottom
+
+    if pos == "bottom left":
+        return {
+            **base_style,
+            "yanchor": "bottom", "y": 0.02,
+            "xanchor": "left", "x": 0.02,
+        }, base_margin_bottom
+
+    # Default: bottom center (horizontal)
+    num_legend_items = sum(
+        1 for tr in fig.data
+        if getattr(tr, "showlegend", True) and getattr(tr, "visible", True) is not False
+    )
+    legend_rows = max(1, (num_legend_items + 5) // 6)
+    bottom_margin = base_margin_bottom + (legend_rows * 25)
+
+    return {
+        **base_style,
+        "orientation": "h",
+        "x": 0.5, "y": -0.12,
+        "xanchor": "center", "yanchor": "top",
+    }, bottom_margin
+
+
+# =============================================================================
+# LEGEND ORDERING
+# =============================================================================
+
+_NUM_RE = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
+
+
+def _legend_sort_key(name: str, order: str):
+    s = (name or "").strip()
+    order = (order or "alpha").strip().lower()
+
+    if order == "numeric":
+        m = _NUM_RE.search(s)
+        if m:
+            try:
+                return (0, float(m.group(0)))
+            except Exception:
+                pass
+        return (1, s.lower())
+
+    # default alpha
+    return s.lower()
+
+
+def apply_legend_order(
+    fig: go.Figure,
+    *,
+    order: str = "alpha",  # "alpha" or "numeric"
+) -> None:
+    """
+    Ensure legend order is alphabetical or numeric by assigning legendrank.
+    Does not reorder traces; only affects legend display.
+    """
+    order = (order or "alpha").strip().lower()
+    if order not in {"alpha", "numeric"}:
+        return
+
+    items = []
+    for i, tr in enumerate(fig.data):
+        if getattr(tr, "showlegend", True) is False:
+            continue
+        if getattr(tr, "visible", True) is False:
+            continue
+        name = getattr(tr, "name", None)
+        if not name or not str(name).strip():
+            continue
+        items.append((i, str(name)))
+
+    if not items:
+        return
+
+    items_sorted = sorted(items, key=lambda t: (_legend_sort_key(t[1], order), t[0]))
+
+    for rank, (i, _name) in enumerate(items_sorted, start=1):
+        fig.data[i].legendrank = rank * 1000
+
+    fig.update_layout(legend=dict(traceorder="normal"))
 
 
 # =============================================================================
@@ -126,23 +346,7 @@ def build_dropdown_buttons(
     total_traces: int,
     label_fn: Optional[Callable[[str], str]] = None,
 ) -> List[Dict[str, Any]]:
-    """
-    Build standardized dropdown menu configuration.
-
-    Parameters
-    ----------
-    trace_map : dict
-        Mapping of {uid: [trace_indices]}.
-    total_traces : int
-        Total number of traces in the figure.
-    label_fn : callable, optional
-        Function to format button labels. Defaults to str(uid).
-
-    Returns
-    -------
-    list
-        List of button configurations for updatemenus.
-    """
+    """Build standardized dropdown menu configuration."""
     buttons = []
     for uid, trace_idxs in trace_map.items():
         visibility = [False] * total_traces
@@ -215,19 +419,6 @@ def assemble_facet_mode(
 ) -> go.Figure:
     """
     Build a vertically stacked subplot with shared X-axis.
-
-    Parameters
-    ----------
-    facet_map : dict
-        Mapping of {series_name: [trace1, trace2, ...]}.
-    shapes : list, optional
-        Shapes to add to all rows.
-    annotations_top : list, optional
-        Annotations to add at the top.
-    title : str
-        Figure title.
-    row_height : int
-        Height per row in pixels.
     """
     n = len(facet_map)
     fig = make_subplots(
@@ -270,11 +461,6 @@ def assemble_dropdown_mode(
 ) -> go.Figure:
     """
     Build a single figure with dropdown visibility toggle.
-
-    Parameters
-    ----------
-    traces : dict
-        Mapping of {series_name: [trace_idx_1, trace_idx_2, ...]}.
     """
     fig = go.Figure()
 

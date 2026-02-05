@@ -39,57 +39,7 @@ def render_by_mode(
     shapes: Optional[List[Any]] = None,
     annotations: Optional[List[Any]] = None,
 ) -> go.Figure:
-    """
-    Render traces using the specified display mode.
-
-    This is the core display function that all tsforge plots use internally.
-    It handles the layout complexity so individual chart functions only need
-    to build their traces once.
-
-    Parameters
-    ----------
-    traces_by_id : dict
-        Mapping of {series_id: [trace1, trace2, ...]}. Each series gets a list
-        of traces (e.g., actuals line, forecast line, PI bands, anomaly markers).
-    mode : {"overlay", "facet", "dropdown"}
-        - "overlay": All series in a single plot (good for comparison)
-        - "facet": Vertically stacked subplots (good for detail)
-        - "dropdown": Single plot with series selector (good for many series)
-    wrap : int, default 2
-        Number of columns for facet mode. Set to 1 for pure vertical stack.
-    shared_xaxes : bool, default True
-        Whether facet subplots share the x-axis.
-    row_height : int, default 280
-        Pixel height per facet row.
-    vertical_spacing : float, default 0.08
-        Spacing between facet rows (0-1 as fraction of plot height).
-    theme : str, default "fa"
-        Theme name: "fa", "mckinsey", "minimal", "dark", "seaborn", "ggplot".
-    style : dict, optional
-        Style overrides: {"title", "subtitle", "x_title", "y_title", "y_range"}.
-    finalize : bool, default True
-        Whether to apply theme and style. Set False if caller will finalize.
-    shapes : list, optional
-        Plotly shapes to add (e.g., reference lines, regions).
-    annotations : list, optional
-        Plotly annotations to add.
-
-    Returns
-    -------
-    go.Figure
-        The assembled and optionally finalized Plotly figure.
-
-    Examples
-    --------
-    >>> traces_by_id = {
-    ...     "series_A": [go.Scatter(x=[1,2,3], y=[4,5,6], name="A")],
-    ...     "series_B": [go.Scatter(x=[1,2,3], y=[7,8,9], name="B")],
-    ... }
-    >>> fig = render_by_mode(traces_by_id, mode="facet", wrap=1, theme="minimal")
-    """
-    if not traces_by_id:
-        raise ValueError("traces_by_id cannot be empty")
-
+    ...
     if mode == "overlay":
         fig = _render_overlay(traces_by_id)
     elif mode == "facet":
@@ -100,6 +50,16 @@ def render_by_mode(
         fig = _render_dropdown(traces_by_id, row_height, col_width)
     else:
         raise ValueError(f"mode must be 'overlay', 'facet', or 'dropdown', got '{mode}'")
+
+    # ✅ Facet default: suppress legend (facet titles already label each subplot)
+    # Allow override via style={"showlegend": True}
+    style = dict(style) if style else {}
+    if mode == "facet" and "showlegend" not in style:
+        style["showlegend"] = False
+        # extra safety: kill per-trace legends too
+        for tr in fig.data:
+            tr.showlegend = False
+        fig.update_layout(showlegend=False)
 
     # Add shapes/annotations
     if shapes:

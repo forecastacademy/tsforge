@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from tsfeatures import *
+from typing import List, Optional, Literal
 
 from .ts_features_extension import (
     ADI,
@@ -20,6 +21,9 @@ from .ts_features_extension import (
     yearly_MASE_score,
 )
 
+# Default LD6 column groups
+DEFAULT_STRUCTURE_COLS = ["trend", "seasonal_strength", "MI_top_k_lags"]
+DEFAULT_CHAOS_COLS = ["permutation_entropy", "adi", "lumpiness"]
 
 def pct_missing_dates(x):
     freq = pd.infer_freq(x)
@@ -38,179 +42,164 @@ def assign_sb_quadrant(cv2: float, adi: float) -> str:
     return 'Intermittent' if cv2 <= 0.49 else 'Lumpy'
 
 
-# Default Lie Detector 6 metric groups
-DEFAULT_STRUCTURE_COLS = ['trend', 'seasonal_strength', 'x_acf1']
-DEFAULT_CHAOS_COLS = ['entropy', 'adi', 'lumpiness']
-
-
-def compute_structure_chaos_scores(
+def compute_forecastability(
     df: pd.DataFrame,
     *,
-    structure_cols: list[str] | None = None,
-    chaos_cols: list[str] | None = None,
+    # Column names
+    structure_cols: List[str] = None,
+    chaos_cols: List[str] = None,
+    adi_col: str = "adi",
+    n_periods_col: Optional[str] = None,
+    # Preprocessing
     clip_quantile: float = 0.95,
-    clip_cols: list[str] | str | None = "chaos",
-    normalize: str = "minmax",
-    structure_weights: dict[str, float] | None = None,
-    chaos_weights: dict[str, float] | None = None,
-    suffix: str = "_norm",
-    inplace: bool = False,
+    clip_cols: Literal["chaos", "structure", "all"] = "chaos",
+    normalize: Literal["minmax", "none"] = "minmax",
+    # Gate thresholds
+    adi_threshold: float = 1.32,
+    min_periods: int = 12,
+    # Quadrant thresholds
+    structure_threshold: float = 0.5,
+    chaos_threshold: float = 0.5,
+    # Weights (optional)
+    structure_weights: Optional[List[float]] = None,
+    chaos_weights: Optional[List[float]] = None,
 ) -> pd.DataFrame:
     """
-    Compute structure and chaos scores from diagnostic metrics.
+    Compute structure score, chaos score, and forecastability lane for each series.
 
-    The Lie Detector 6 (LD6) framework collapses diagnostic metrics into two
-    composite scores:
-    - **Structure Score**: Measures learnable patterns (trend, seasonality, autocorrelation)
-    - **Chaos Score**: Measures data reliability issues (entropy, intermittency, lumpiness)
-
-    When chaos is high, structure metrics become unreliable.
+    The function applies a gated routing logic:
+    1. Short History — fewer than min_periods observations
+    2. Sparse — ADI exceeds adi_threshold (intermittency overrides all other metrics)
+    3. Stable — high structure, low chaos
+    4. Complex — high structure, high chaos
+    5. Messy — everything else (low structure)
 
     Parameters
     ----------
     df : pd.DataFrame
-        DataFrame with diagnostic metric columns.
+        Diagnostics table with one row per series. Must contain the LD6 metric columns.
     structure_cols : list of str, optional
-        Metrics for structure score. Default: ['trend', 'seasonal_strength', 'x_acf1']
+        Columns for the structure score. Default: ["trend", "seasonal_strength", "x_acf1"]
     chaos_cols : list of str, optional
-        Metrics for chaos score. Default: ['entropy', 'adi', 'lumpiness']
+        Columns for the chaos score. Default: ["entropy", "adi", "lumpiness"]
+    adi_col : str, default "adi"
+        Column containing the ADI (average demand interval) metric.
+        Used for the Sparse gate. Must also appear in chaos_cols.
+    n_periods_col : str, optional
+        Column containing the number of observations per series.
+        If provided, enables the Short History gate. If None, the gate is skipped.
     clip_quantile : float, default 0.95
-        Quantile for capping outliers. Set to None to disable clipping.
-    clip_cols : list of str, "chaos", "all", or None
-        Which columns to clip. "chaos" clips only chaos columns (default),
-        "all" clips all metric columns, None disables clipping.
-    normalize : {"minmax", "zscore", "robust"}, default "minmax"
-        Normalization method:
-        - "minmax": Scale to [0, 1] range
-        - "zscore": Standardize to mean=0, std=1
-        - "robust": Use median and IQR (robust to outliers)
-    structure_weights : dict, optional
-        Weights for structure metrics. Default: equal weights.
-    chaos_weights : dict, optional
-        Weights for chaos metrics. Default: equal weights.
-    suffix : str, default "_norm"
-        Suffix for normalized column names.
-    inplace : bool, default False
-        If True, modify df in place. Otherwise return a copy.
+        Percentile at which to cap outliers before normalization.
+    clip_cols : {"chaos", "structure", "all"}, default "chaos"
+        Which metric group(s) to clip.
+    normalize : {"minmax", "none"}, default "minmax"
+        Normalization method. "minmax" scales each metric to [0, 1].
+    adi_threshold : float, default 1.32
+        ADI values above this trigger the Sparse gate.
+        Based on the Syntetos-Boylan crossover point. Treat as a heuristic, not law.
+    min_periods : int, default 12
+        Minimum number of observations for diagnostics to be considered reliable.
+    structure_threshold : float, default 0.5
+        Structure score above this = "high structure" for lane assignment.
+    chaos_threshold : float, default 0.5
+        Chaos score above this = "high chaos" for lane assignment.
+    structure_weights : list of float, optional
+        Weights for each structure metric. Default: equal weights.
+    chaos_weights : list of float, optional
+        Weights for each chaos metric. Default: equal weights.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with added columns:
-        - {metric}{suffix}: Normalized metric values
-        - {metric}_clipped: Clipped values (if clipping enabled)
-        - structure_score: Weighted average of normalized structure metrics
-        - chaos_score: Weighted average of normalized chaos metrics
-
-    Examples
-    --------
-    >>> # Basic usage with defaults (LD6 metrics)
-    >>> scores = compute_structure_chaos_scores(diagnostics)
-
-    >>> # Custom metric groups
-    >>> scores = compute_structure_chaos_scores(
-    ...     diagnostics,
-    ...     structure_cols=['trend', 'seasonal_strength'],
-    ...     chaos_cols=['entropy', 'adi', 'cv2'],
-    ... )
-
-    >>> # With weighted averaging
-    >>> scores = compute_structure_chaos_scores(
-    ...     diagnostics,
-    ...     structure_weights={'trend': 2.0, 'seasonal_strength': 1.0, 'x_acf1': 1.0},
-    ... )
-
-    >>> # Different normalization and clipping
-    >>> scores = compute_structure_chaos_scores(
-    ...     diagnostics,
-    ...     clip_quantile=0.99,
-    ...     clip_cols='all',
-    ...     normalize='robust',
-    ... )
+        Original DataFrame with three new columns:
+        - structure_score (float, 0-1)
+        - chaos_score (float, 0-1)
+        - forecastability (str: "Short History", "Sparse", "Stable", "Complex", "Messy")
     """
-    # Use defaults if not specified
-    if structure_cols is None:
-        structure_cols = DEFAULT_STRUCTURE_COLS.copy()
-    if chaos_cols is None:
-        chaos_cols = DEFAULT_CHAOS_COLS.copy()
+    structure_cols = structure_cols or DEFAULT_STRUCTURE_COLS
+    chaos_cols = chaos_cols or DEFAULT_CHAOS_COLS
 
-    # Filter to available columns
-    structure_cols = [c for c in structure_cols if c in df.columns]
-    chaos_cols = [c for c in chaos_cols if c in df.columns]
+    # Validate columns exist
+    missing = [c for c in structure_cols + chaos_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing columns in DataFrame: {missing}")
 
-    if not structure_cols:
-        raise ValueError("No structure columns found in DataFrame")
-    if not chaos_cols:
-        raise ValueError("No chaos columns found in DataFrame")
+    if adi_col not in df.columns:
+        raise ValueError(f"adi_col '{adi_col}' not found in DataFrame")
 
-    all_metric_cols = structure_cols + chaos_cols
+    result = df.copy()
 
-    # Work on copy unless inplace
-    result = df if inplace else df.copy()
-
-    # Determine which columns to clip
+    # --- Step 1: Clip outliers ---
+    cols_to_clip = []
     if clip_cols == "chaos":
         cols_to_clip = chaos_cols
+    elif clip_cols == "structure":
+        cols_to_clip = structure_cols
     elif clip_cols == "all":
-        cols_to_clip = all_metric_cols
-    elif clip_cols is None:
-        cols_to_clip = []
+        cols_to_clip = structure_cols + chaos_cols
+
+    for col in cols_to_clip:
+        cap = result[col].quantile(clip_quantile)
+        result[col] = result[col].clip(upper=cap)
+
+    # --- Step 2: Normalize ---
+    if normalize == "minmax":
+        for col in structure_cols + chaos_cols:
+            cmin = result[col].min()
+            cmax = result[col].max()
+            if cmax > cmin:
+                result[col] = (result[col] - cmin) / (cmax - cmin)
+            else:
+                result[col] = 0.0
+
+    # --- Step 3: Compute scores (weighted average) ---
+    if structure_weights is not None:
+        if len(structure_weights) != len(structure_cols):
+            raise ValueError("structure_weights must match length of structure_cols")
+        sw = np.array(structure_weights) / np.sum(structure_weights)
+        result["structure_score"] = sum(
+            result[col] * w for col, w in zip(structure_cols, sw)
+        )
     else:
-        cols_to_clip = [c for c in clip_cols if c in df.columns]
+        result["structure_score"] = result[structure_cols].mean(axis=1)
 
-    # Clip outliers
-    if clip_quantile is not None and cols_to_clip:
-        for col in cols_to_clip:
-            cap_at = result[col].quantile(clip_quantile)
-            result[f'{col}_clipped'] = result[col].clip(upper=cap_at)
+    if chaos_weights is not None:
+        if len(chaos_weights) != len(chaos_cols):
+            raise ValueError("chaos_weights must match length of chaos_cols")
+        cw = np.array(chaos_weights) / np.sum(chaos_weights)
+        result["chaos_score"] = sum(
+            result[col] * w for col, w in zip(chaos_cols, cw)
+        )
+    else:
+        result["chaos_score"] = result[chaos_cols].mean(axis=1)
 
-    # Normalization functions
-    def _minmax(s: pd.Series) -> pd.Series:
-        min_val, max_val = s.min(), s.max()
-        if max_val == min_val:
-            return pd.Series(0.5, index=s.index)
-        return (s - min_val) / (max_val - min_val)
+    # --- Step 4: Assign forecastability lanes (gated logic) ---
+    # Start with everything as Messy, then override in priority order
+    result["forecastability"] = "Messy"
 
-    def _zscore(s: pd.Series) -> pd.Series:
-        mean, std = s.mean(), s.std()
-        if std == 0:
-            return pd.Series(0.0, index=s.index)
-        return (s - mean) / std
+    # Gate 1: Short History (if n_periods_col provided)
+    if n_periods_col is not None:
+        if n_periods_col not in df.columns:
+            raise ValueError(f"n_periods_col '{n_periods_col}' not found in DataFrame")
+        result.loc[df[n_periods_col] < min_periods, "forecastability"] = "Short History"
 
-    def _robust(s: pd.Series) -> pd.Series:
-        median = s.median()
-        q1, q3 = s.quantile(0.25), s.quantile(0.75)
-        iqr = q3 - q1
-        if iqr == 0:
-            return pd.Series(0.0, index=s.index)
-        return (s - median) / iqr
+    # Gate 2: Sparse (ADI override — checked on raw/unclipped ADI from original df)
+    sparse_mask = df[adi_col] > adi_threshold
+    # Don't override Short History
+    already_assigned = result["forecastability"] == "Short History"
+    result.loc[sparse_mask & ~already_assigned, "forecastability"] = "Sparse"
 
-    normalizers = {"minmax": _minmax, "zscore": _zscore, "robust": _robust}
-    if normalize not in normalizers:
-        raise ValueError(f"normalize must be one of {list(normalizers.keys())}")
-    norm_fn = normalizers[normalize]
+    # Gate 3: Quadrant assignment for remaining series
+    remaining = result["forecastability"] == "Messy"
 
-    # Normalize metrics
-    for col in all_metric_cols:
-        # Use clipped values if available
-        source_col = f'{col}_clipped' if f'{col}_clipped' in result.columns else col
-        result[f'{col}{suffix}'] = norm_fn(result[source_col])
+    high_structure = result["structure_score"] >= structure_threshold
+    high_chaos = result["chaos_score"] >= chaos_threshold
 
-    # Compute weighted averages
-    def _weighted_mean(cols: list[str], weights: dict[str, float] | None) -> pd.Series:
-        norm_cols = [f'{c}{suffix}' for c in cols]
-        if weights is None:
-            return result[norm_cols].mean(axis=1)
-        else:
-            w = np.array([weights.get(c, 1.0) for c in cols])
-            w = w / w.sum()  # Normalize weights
-            return (result[norm_cols] * w).sum(axis=1)
-
-    result['structure_score'] = _weighted_mean(structure_cols, structure_weights)
-    result['chaos_score'] = _weighted_mean(chaos_cols, chaos_weights)
+    result.loc[remaining & high_structure & ~high_chaos, "forecastability"] = "Stable"
+    result.loc[remaining & high_structure & high_chaos, "forecastability"] = "Complex"
+    # Low structure stays "Messy" (already the default)
 
     return result
-
 
 TSFORGE_FEATURES = [
     # BASE TSFEATURES
