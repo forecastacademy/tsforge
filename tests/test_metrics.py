@@ -81,11 +81,7 @@ def test_score_all_dict_and_dataframe():
 
 def test_defender_decision_dataclass():
     """Verify DefenderDecision has required fields."""
-    required_fields = {
-        "model", "wmape", "bias", "beat_rate", "jitter",
-        "passes_anchor_gate", "beat_rate_pass", "bias_pass", "jitter_pass",
-        "final_decision", "decision_reason"
-    }
+    required_fields = {"model", "final_decision", "decision_reason"}
     actual_fields = {f.name for f in fields(DefenderDecision)}
     assert required_fields == actual_fields, f"Missing fields: {required_fields - actual_fields}"
 
@@ -94,14 +90,6 @@ def test_defender_decision_creation():
     """Verify DefenderDecision can be instantiated."""
     decision = DefenderDecision(
         model="TestModel",
-        wmape=0.15,
-        bias=0.02,
-        beat_rate=55.0,
-        jitter=0.1,
-        passes_anchor_gate=True,
-        beat_rate_pass=True,
-        bias_pass=True,
-        jitter_pass=True,
         final_decision="DEFENDER",
         decision_reason="Selected as Defender"
     )

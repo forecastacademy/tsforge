@@ -23,42 +23,18 @@ __all__ = [
 @dataclass
 class DefenderDecision:
     """
-    Container for defender selection decision and audit trail.
+    Defender selection decision with audit trail.
 
     Attributes
     ----------
     model : str
         Model name
-    wmape : float
-        Portfolio weighted mean absolute percentage error
-    bias : float
-        Portfolio bias
-    beat_rate : float
-        Percentage of series where model beats anchor (0-100)
-    jitter : float
-        Stability metric (std of wmape across cutoffs)
-    passes_anchor_gate : bool
-        Whether model beats anchor and beat_rate > 50%
-    beat_rate_pass : bool
-        Whether beat_rate >= threshold
-    bias_pass : bool
-        Whether |bias| <= threshold
-    jitter_pass : bool
-        Whether jitter <= threshold
     final_decision : str
         One of: "DEFENDER", "REJECT"
     decision_reason : str
-        Explanation of decision (e.g., "Selected as Defender", "Failed beat_rate check")
+        Explanation of decision
     """
     model: str
-    wmape: float
-    bias: float
-    beat_rate: float
-    jitter: float
-    passes_anchor_gate: bool
-    beat_rate_pass: bool
-    bias_pass: bool
-    jitter_pass: bool
     final_decision: str
     decision_reason: str
 
