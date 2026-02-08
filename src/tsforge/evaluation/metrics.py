@@ -4,6 +4,19 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+__all__ = [
+    # Simple metric functions
+    "mae", "mse", "rmse",
+    "mape", "smape", "wape", "business_accuracy",
+    "mase", "bias", "mean_percentage_error", "forecast_bias",
+    "score_all",
+    "coverage_score", "mean_width", "winkler_score", "cwc", "score_intervals",
+    # Governance classes
+    "MetricsCalculator",
+    "DefenderDecision",
+]
+
+
 # ============================================================================
 # DefenderDecision Dataclass
 # ============================================================================
@@ -387,66 +400,43 @@ class MetricsCalculator:
             - decision_reason : str (explanation)
         """
         df = portfolio_df.copy()
+        anchor_wmape = df.loc[df[self.model_col] == self.anchor_model, "wmape"].values[0]
 
-        # Get anchor performance
-        anchor_wmape = df.loc[
-            df[self.model_col] == self.anchor_model, "wmape"
-        ].values[0]
-
-        # Step 1: Anchor Gate
-        df["passes_anchor_gate"] = (
-            (df["wmape"] < anchor_wmape) &
-            (df["beat_rate"] > 50)
-        )
-
-        # Step 2: Rank by wmape
-        df["wmape_rank"] = df["wmape"].rank(method="min").astype(int)
-
-        # Step 3: Veto checks
+        # Veto checks
+        df["passes_anchor_gate"] = (df["wmape"] < anchor_wmape) & (df["beat_rate"] > 50)
         df["beat_rate_pass"] = df["beat_rate"] >= beat_rate_threshold
         df["bias_pass"] = df["bias"].abs() <= bias_threshold
         df["jitter_pass"] = df["jitter"] <= jitter_threshold
+        df["wmape_rank"] = df["wmape"].rank(method="min").astype(int)
 
-        # Combined eligibility
-        df["all_vetos_pass"] = (
-            df["beat_rate_pass"] & df["bias_pass"] & df["jitter_pass"]
-        )
+        # Eligibility
         df["eligible_defender"] = (
-            df["passes_anchor_gate"] & df["all_vetos_pass"]
+            df["passes_anchor_gate"]
+            & df["beat_rate_pass"]
+            & df["bias_pass"]
+            & df["jitter_pass"]
         )
 
-        # Initialize decision columns
-        df["final_decision"] = "REJECT"
-        df["decision_reason"] = ""
-
-        # Build decision reasons for each row
-        for idx, row in df.iterrows():
+        # Build decision reasons using vectorized logic
+        def build_reason(row):
+            if row["eligible_defender"]:
+                return "Eligible"
             reasons = []
-
             if not row["passes_anchor_gate"]:
                 reasons.append("Failed Anchor Gate")
-
             if not row["beat_rate_pass"]:
-                reasons.append(
-                    f"Beat Rate {row['beat_rate']:.1f}% < {beat_rate_threshold}%"
-                )
-
+                reasons.append(f"Beat Rate {row['beat_rate']:.1f}% < {beat_rate_threshold}%")
             if not row["bias_pass"]:
-                reasons.append(
-                    f"Bias {row['bias']:+.1f} exceeds ±{bias_threshold}"
-                )
-
+                reasons.append(f"Bias {row['bias']:+.1f} exceeds ±{bias_threshold}")
             if not row["jitter_pass"]:
-                reasons.append(
-                    f"Jitter {row['jitter']:.3f} > {jitter_threshold}"
-                )
+                reasons.append(f"Jitter {row['jitter']:.3f} > {jitter_threshold}")
+            return "; ".join(reasons)
 
-            df.at[idx, "decision_reason"] = (
-                "; ".join(reasons) if reasons else "Eligible"
-            )
+        df["decision_reason"] = df.apply(build_reason, axis=1)
+        df["final_decision"] = "REJECT"
 
-        # Find the Defender: lowest wmape among eligible
-        eligible = df.query("eligible_defender == True").sort_values("wmape")
+        # Select Defender: lowest wmape among eligible
+        eligible = df[df["eligible_defender"]].sort_values("wmape")
         if len(eligible) > 0:
             defender_idx = eligible.index[0]
             df.at[defender_idx, "final_decision"] = "DEFENDER"
