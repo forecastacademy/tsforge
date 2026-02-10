@@ -1,8 +1,47 @@
 import numpy as np
 import pandas as pd
+from dataclasses import dataclass
+from typing import Optional
 
 
-# --- Scale-dependent metrics ---
+__all__ = [
+    # Point forecast metrics
+    "mae", "mse", "rmse",
+    "mape", "smape", "wape",
+    "bias", "score_all",
+    # Governance classes
+    "MetricsCalculator",
+    "DefenderDecision",
+]
+
+
+# ============================================================================
+# DefenderDecision Dataclass
+# ============================================================================
+
+
+@dataclass
+class DefenderDecision:
+    """
+    Defender selection decision with audit trail.
+
+    Attributes
+    ----------
+    model : str
+        Model name
+    final_decision : str
+        One of: "DEFENDER", "REJECT"
+    decision_reason : str
+        Explanation of decision
+    """
+    model: str
+    final_decision: str
+    decision_reason: str
+
+
+# ============================================================================
+# Scale-dependent metrics
+# ============================================================================
 def mae(y, yhat):
     return float(np.mean(np.abs(np.asarray(y) - np.asarray(yhat))))
 
@@ -175,14 +214,224 @@ def score_intervals(y: np.ndarray, lo: np.ndarray, hi: np.ndarray, level: int, e
         f"winkler_{level}": winkler,
         f"cwc_{level}": cwc,
     }
+# ============================================================================
+# MetricsCalculator Class
+# ============================================================================
+
+
+class MetricsCalculator:
+    """
+    Compute forecast evaluation metrics and governance decisions.
+
+    Handles portfolio-level metric aggregation and applies Gate→Rank→Veto
+    logic for Defender selection.
+
+    Parameters
+    ----------
+    anchor_model : str, default="SN52"
+        Baseline model for beat rate and FVA calculations
+    model_col : str, default="model"
+        Column name for model identifiers
+    metric_col : str, default="wmape"
+        Primary metric column name for ranking
+    """
+
+    def __init__(
+        self,
+        anchor_model: str = "SN52",
+        model_col: str = "model",
+        metric_col: str = "wmape",
+    ):
+        """Initialize MetricsCalculator with configuration."""
+        self.anchor_model = anchor_model
+        self.model_col = model_col
+        self.metric_col = metric_col
+
+    def compute_improvement_distribution(
+        self,
+        metric_level_df: pd.DataFrame,
+        metric_col: Optional[str] = None,
+        anchor_threshold: float = 0.01,
+    ) -> pd.DataFrame:
+        """
+        Compute % improvement vs Anchor for each metric-level grouping.
+
+        % improvement = (anchor_metric - model_metric) / anchor_metric * 100
+        Positive values = model better than anchor
+        Negative values = model worse than anchor
+
+        Parameters
+        ----------
+        metric_level_df : pd.DataFrame
+            Metric-level results with columns: model, metric_level_col, metric_col
+        metric_col : str, optional
+            Metric column to use. Defaults to self.metric_col (wmape)
+        anchor_threshold : float, default=0.01
+            Filter out metric_level items where anchor metric < threshold
+            (avoids division by very small numbers)
+
+        Returns
+        -------
+        pd.DataFrame
+            Columns: model, metric_level_col (e.g., item_id), anchor_metric,
+                     model_metric, pct_improvement
+        """
+        metric_col = metric_col or self.metric_col
+
+        # Infer metric_level column name (should be non-standard column)
+        metric_level_cols = [
+            col for col in metric_level_df.columns
+            if col not in [self.model_col, metric_col, "cutoff"]
+        ]
+
+        if not metric_level_cols:
+            raise ValueError(
+                f"Could not infer metric_level column. "
+                f"Expected non-standard column besides: {self.model_col}, {metric_col}, cutoff"
+            )
+
+        metric_level_col = metric_level_cols[0]
+
+        # Get anchor performance per metric_level
+        anchor_by_level = (
+            metric_level_df
+            .query(f"{self.model_col} == '{self.anchor_model}'")
+            .groupby(metric_level_col)
+            [metric_col]
+            .mean()
+            .reset_index()
+            .rename(columns={metric_col: "anchor_metric"})
+        )
+
+        # Get model performance per metric_level
+        model_by_level = (
+            metric_level_df
+            .groupby([self.model_col, metric_level_col])
+            [metric_col]
+            .mean()
+            .reset_index()
+            .rename(columns={metric_col: "model_metric"})
+        )
+
+        # Merge and compute improvement
+        improvement = model_by_level.merge(
+            anchor_by_level, on=metric_level_col, how="left"
+        )
+
+        # Filter out very small anchor values
+        improvement = improvement.query(f"anchor_metric > {anchor_threshold}").copy()
+
+        # Compute percentage improvement
+        improvement["pct_improvement"] = (
+            (improvement["anchor_metric"] - improvement["model_metric"])
+            / improvement["anchor_metric"] * 100
+        )
+
+        return improvement
+
+    def select_defender(
+        self,
+        portfolio_df: pd.DataFrame,
+        beat_rate_threshold: float = 50.0,
+        bias_threshold: float = 10.0,
+        jitter_threshold: float = 10.0,
+    ) -> pd.DataFrame:
+        """
+        Apply Gate → Rank → Veto logic to select the Defender model.
+
+        Decision Process:
+        1. **Anchor Gate:** Model must beat Seasonal Naive on portfolio wmape
+           AND beat_rate > 50%
+        2. **Rank:** Among eligible models, rank by portfolio wmape (lower is better)
+        3. **Veto Checks:**
+           - Beat Rate >= beat_rate_threshold
+           - |Bias| <= bias_threshold
+           - Jitter <= jitter_threshold
+
+        The Defender is the eligible model with the lowest wmape.
+
+        Parameters
+        ----------
+        portfolio_df : pd.DataFrame
+            Portfolio-level results with columns: model, wmape, beat_rate, bias, jitter
+        beat_rate_threshold : float, default=50.0
+            Minimum beat rate (0-100 scale)
+        bias_threshold : float, default=10.0
+            Maximum absolute bias
+        jitter_threshold : float, default=10.0
+            Maximum jitter value
+
+        Returns
+        -------
+        pd.DataFrame
+            Input with added decision columns:
+            - passes_anchor_gate : bool
+            - wmape_rank : int
+            - beat_rate_pass : bool
+            - bias_pass : bool
+            - jitter_pass : bool
+            - final_decision : str ("DEFENDER" or "REJECT")
+            - decision_reason : str (explanation)
+        """
+        df = portfolio_df.copy()
+        anchor_wmape = df.loc[df[self.model_col] == self.anchor_model, "wmape"].values[0]
+
+        # Veto checks
+        df["passes_anchor_gate"] = (df["wmape"] < anchor_wmape) & (df["beat_rate"] > 50)
+        df["beat_rate_pass"] = df["beat_rate"] >= beat_rate_threshold
+        df["bias_pass"] = df["bias"].abs() <= bias_threshold
+        df["jitter_pass"] = df["jitter"] <= jitter_threshold
+        df["wmape_rank"] = df["wmape"].rank(method="min").astype(int)
+
+        # Eligibility
+        df["eligible_defender"] = (
+            df["passes_anchor_gate"]
+            & df["beat_rate_pass"]
+            & df["bias_pass"]
+            & df["jitter_pass"]
+        )
+
+        # Build decision reasons using vectorized logic
+        def build_reason(row):
+            if row["eligible_defender"]:
+                return "Eligible"
+            reasons = []
+            if not row["passes_anchor_gate"]:
+                reasons.append("Failed Anchor Gate")
+            if not row["beat_rate_pass"]:
+                reasons.append(f"Beat Rate {row['beat_rate']:.1f}% < {beat_rate_threshold}%")
+            if not row["bias_pass"]:
+                reasons.append(f"Bias {row['bias']:+.1f} exceeds ±{bias_threshold}")
+            if not row["jitter_pass"]:
+                reasons.append(f"Jitter {row['jitter']:.3f} > {jitter_threshold}")
+            return "; ".join(reasons)
+
+        df["decision_reason"] = df.apply(build_reason, axis=1)
+        df["final_decision"] = "REJECT"
+
+        # Select Defender: lowest wmape among eligible
+        eligible = df[df["eligible_defender"]].sort_values("wmape")
+        if len(eligible) > 0:
+            defender_idx = eligible.index[0]
+            df.at[defender_idx, "final_decision"] = "DEFENDER"
+            df.at[defender_idx, "decision_reason"] = (
+                "Selected as Defender (lowest wmape among eligible)"
+            )
+
+        return df
+
+
+# ============================================================================
 # Working Example
+# ============================================================================
+
 # y = [100, 120, 130, 110]
 # yhat = [90, 125, 128, 115]
 
 # from tsforge.metrics import score_all
 
 # print(score_all(y, yhat))
-# # {'mae': 5.0, 'rmse': 5.590, 'mape': 4.12, 'smape': 4.05, 'wape': 0.045, 
+# # {'mae': 5.0, 'rmse': 5.590, 'mape': 4.12, 'smape': 4.05, 'wape': 0.045,
 # #  'accuracy': 0.955, 'bias': 1.5, 'mpe': 1.23, 'forecast_bias': 1.01, 'mase': 0.87}
 
 # # As a DataFrame row (ready for leaderboard)
