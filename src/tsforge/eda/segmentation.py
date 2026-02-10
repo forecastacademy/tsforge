@@ -1,95 +1,139 @@
 """ABC segmentation and portfolio classification utilities."""
-
+from __future__ import annotations
 import numpy as np
 import pandas as pd
+from typing import Literal, Optional, Tuple
+
+# Default Pareto thresholds (cumulative % of total)
+DEFAULT_ABC_THRESHOLDS = (0.80, 0.95)
 
 
-def abc_classification(
+def compute_abc(
     df: pd.DataFrame,
-    metric: str = 'volume',
-    a_pct: float = 0.80,
-    b_pct: float = 0.95,
-    price_col: str = 'sell_price',
-    id_col: str = 'unique_id',
-    value_col: str = 'y',
+    *,
+    id_col: str = "unique_id",
+    date_col: str = "ds",
+    value_col: str = "y",
+    method: Literal["volume", "revenue"] = "volume",
+    price_col: Optional[str] = None,
+    thresholds: Tuple[float, float] = DEFAULT_ABC_THRESHOLDS,
+    recency: Optional[str] = None,
 ) -> pd.DataFrame:
     """
-    Compute ABC classification based on volume or revenue.
+    Classify series into ABC classes based on cumulative volume or revenue.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Time series data with id and value columns.
-    metric : str, default 'volume'
-        Classification metric: 'volume' (units) or 'revenue' (dollars).
-    a_pct : float, default 0.80
-        Cumulative percentage threshold for class A (top contributors).
-    b_pct : float, default 0.95
-        Cumulative percentage threshold for class B (A + B combined).
-    price_col : str, default 'sell_price'
-        Column name for price when metric='revenue'.
-    id_col : str, default 'unique_id'
-        Column name for series identifier.
-    value_col : str, default 'y'
-        Column name for the value to aggregate.
+        Raw time series data at the id × date level.
+    id_col : str, default "unique_id"
+        Column identifying each series.
+    date_col : str, default "ds"
+        Column containing dates/timestamps. Required when using recency filter.
+    value_col : str, default "y"
+        Column containing unit quantities (volume method) or revenue amounts.
+    method : {"volume", "revenue"}, default "volume"
+        How to measure importance.
+        - "volume": sum of value_col directly (units, cases, etc.)
+        - "revenue": requires price_col; computes value_col × price_col per row,
+          then sums per series.
+    price_col : str, optional
+        Column containing unit price. Required when method="revenue".
+    thresholds : tuple of (float, float), default (0.80, 0.95)
+        Cumulative percentage cutoffs:
+        - First value: A/B boundary (default 0.80 = top 80%)
+        - Second value: B/C boundary (default 0.95 = top 95%)
+    recency : str, optional
+        Pandas offset string to filter data to recent period before classification.
+        Only rows within this window (relative to each series' max date) are used.
+        Examples: "52W" (last year), "26W" (last 6 months), "13W" (last quarter).
+        If None, all data is used.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with columns:
-        - {id_col}: series identifier
-        - total_volume: sum of values per series
-        - total_revenue: sum of value * price per series (if metric='revenue')
-        - cum_{metric}_pct: cumulative percentage
-        - abc_class: 'A', 'B', or 'C'
+        One row per series with columns:
+        - id_col: series identifier
+        - total_volume: aggregated importance metric
+        - cumulative_pct: cumulative share of total (0-1)
+        - abc_class: "A", "B", or "C"
+        - abc_rank: rank by volume/revenue (1 = highest)
 
     Examples
     --------
-    >>> # Volume-based (default)
-    >>> abc_df = abc_classification(weekly_df)
-    >>> portfolio_df = portfolio_df.merge(abc_df[[id_col, 'abc_class']], on=id_col)
+    >>> # Basic volume-based ABC
+    >>> abc = compute_abc(weekly_df, id_col='unique_id', value_col='y')
 
-    >>> # Revenue-based
-    >>> abc_df = abc_classification(weekly_df, metric='revenue')
+    >>> # Revenue-based ABC
+    >>> abc = compute_abc(weekly_df, method='revenue', price_col='sell_price')
+
+    >>> # Volume-based, last 52 weeks only
+    >>> abc = compute_abc(weekly_df, recency='52W')
 
     >>> # Custom thresholds (70/90 split)
-    >>> abc_df = abc_classification(weekly_df, a_pct=0.70, b_pct=0.90)
+    >>> abc = compute_abc(weekly_df, thresholds=(0.70, 0.90))
     """
-    if metric not in ('volume', 'revenue'):
-        raise ValueError(f"metric must be 'volume' or 'revenue', got '{metric}'")
+    a_cutoff, b_cutoff = thresholds
 
-    # Calculate totals per series
-    if metric == 'volume':
-        agg = df.groupby(id_col)[value_col].sum().reset_index()
-        agg.columns = [id_col, 'total_volume']
-        sort_col = 'total_volume'
+    if a_cutoff >= b_cutoff:
+        raise ValueError(
+            f"First threshold ({a_cutoff}) must be less than second ({b_cutoff})"
+        )
+    if not (0 < a_cutoff < 1) or not (0 < b_cutoff < 1):
+        raise ValueError("Thresholds must be between 0 and 1")
+
+    if method == "revenue" and price_col is None:
+        raise ValueError("price_col is required when method='revenue'")
+
+    data = df.copy()
+
+    # --- Recency filter ---
+    if recency is not None:
+        data[date_col] = pd.to_datetime(data[date_col])
+        cutoff = data[date_col].max() - pd.tseries.frequencies.to_offset(recency)
+        data = data[data[date_col] > cutoff].copy()
+
+        if len(data) == 0:
+            raise ValueError(
+                f"No data remaining after recency filter '{recency}'. "
+                f"Check your date range."
+            )
+
+    # --- Compute importance metric ---
+    if method == "revenue":
+        data["_revenue"] = data[value_col] * data[price_col]
+        agg_col = "_revenue"
     else:
-        if price_col not in df.columns:
-            raise ValueError(f"Column '{price_col}' not found for revenue calculation")
-        df = df.copy()
-        df['_revenue'] = df[value_col] * df[price_col]
-        agg = df.groupby(id_col).agg(
-            total_volume=(value_col, 'sum'),
-            total_revenue=('_revenue', 'sum')
-        ).reset_index()
-        sort_col = 'total_revenue'
+        agg_col = value_col
 
-    # Sort by value descending
-    agg = agg.sort_values(sort_col, ascending=False).reset_index(drop=True)
-
-    # Cumulative percentage
-    total = agg[sort_col].sum()
-    cum_col = f'cum_{metric}_pct'
-    agg[cum_col] = agg[sort_col].cumsum() / total if total > 0 else 0
-
-    # ABC assignment
-    agg['abc_class'] = np.where(
-        agg[cum_col] <= a_pct, 'A',
-        np.where(agg[cum_col] <= b_pct, 'B', 'C')
+    totals = (
+        data.groupby(id_col)[agg_col]
+        .sum()
+        .reset_index()
+        .rename(columns={agg_col: "total_volume"})
     )
 
-    return agg
+    # --- Sort and compute cumulative share ---
+    totals = totals.sort_values("total_volume", ascending=False).reset_index(drop=True)
+    totals["abc_rank"] = range(1, len(totals) + 1)
+    grand_total = totals["total_volume"].sum()
 
+    if grand_total == 0:
+        raise ValueError("Total volume/revenue is zero. Check your data and filters.")
+
+    totals["cumulative_pct"] = totals["total_volume"].cumsum() / grand_total
+
+    # --- Assign ABC classes ---
+    totals["abc_class"] = "C"
+    totals.loc[totals["cumulative_pct"] <= b_cutoff, "abc_class"] = "B"
+    totals.loc[totals["cumulative_pct"] <= a_cutoff, "abc_class"] = "A"
+
+    # Edge case: first row is always A even if it alone exceeds the A cutoff
+    # (a single dominant SKU is by definition your most important item)
+    if len(totals) > 0:
+        totals.loc[0, "abc_class"] = "A"
+
+    return totals
 
 def assign_archetypes(
     df: pd.DataFrame,

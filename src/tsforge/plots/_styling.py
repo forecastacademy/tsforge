@@ -7,7 +7,7 @@ Merges: core/palette.py, core/theme.py, style.py
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Dict, Iterator, Optional, Any
+from typing import Dict, Iterator, Optional, Any, Union
 
 try:
     import matplotlib.pyplot as plt
@@ -41,14 +41,100 @@ ABC_COLORS = {
     'C': '#aed6f1',  # Light blue - trivial many
 }
 
+# Common CSS named colors to hex mapping
+NAMED_COLORS = {
+    'red': '#FF0000',
+    'green': '#008000',
+    'blue': '#0000FF',
+    'yellow': '#FFFF00',
+    'orange': '#FFA500',
+    'purple': '#800080',
+    'pink': '#FFC0CB',
+    'cyan': '#00FFFF',
+    'magenta': '#FF00FF',
+    'lime': '#00FF00',
+    'navy': '#000080',
+    'teal': '#008080',
+    'maroon': '#800000',
+    'olive': '#808000',
+    'gray': '#808080',
+    'grey': '#808080',
+    'silver': '#C0C0C0',
+    'white': '#FFFFFF',
+    'black': '#000000',
+    'aqua': '#00FFFF',
+    'fuchsia': '#FF00FF',
+    'coral': '#FF7F50',
+    'salmon': '#FA8072',
+    'tomato': '#FF6347',
+    'gold': '#FFD700',
+    'indigo': '#4B0082',
+    'violet': '#EE82EE',
+    'crimson': '#DC143C',
+    'darkgreen': '#006400',
+    'darkblue': '#00008B',
+    'darkred': '#8B0000',
+    'lightblue': '#ADD8E6',
+    'lightgreen': '#90EE90',
+}
+
 
 def hex_to_rgba(hex_color: str, alpha: float = 0.25) -> str:
-    """Convert #RRGGBB to rgba(r,g,b,a)."""
+    """Convert hex color or named color to rgba(r,g,b,a)."""
+    # Handle rgba strings - extract rgb and apply new alpha
+    if hex_color.startswith('rgba('):
+        parts = hex_color[5:-1].split(',')
+        return f"rgba({parts[0]},{parts[1]},{parts[2]},{alpha})"
+
+    # Handle rgb strings - add alpha
+    if hex_color.startswith('rgb('):
+        parts = hex_color[4:-1].split(',')
+        return f"rgba({parts[0]},{parts[1]},{parts[2]},{alpha})"
+
+    # Handle named colors
+    color_lower = hex_color.lower().strip()
+    if color_lower in NAMED_COLORS:
+        hex_color = NAMED_COLORS[color_lower]
+
+    # Handle hex colors
     hex_color = hex_color.lstrip("#")
     r = int(hex_color[0:2], 16)
     g = int(hex_color[2:4], 16)
     b = int(hex_color[4:6], 16)
     return f"rgba({r},{g},{b},{alpha})"
+
+
+def resolve_color(
+    colors: Optional[Union[str, Dict[str, str]]],
+    key: str,
+    index: int = 0,
+) -> str:
+    """
+    Get color for a trace, falling back to PALETTE.
+
+    Parameters
+    ----------
+    colors : str, dict, or None
+        If str, returned directly for all keys.
+        If dict, looked up by key with PALETTE fallback.
+        If None, falls back to PALETTE by index.
+    key : str
+        The value to look up in a dict-style colors param.
+    index : int, default 0
+        Fallback position in PALETTE.
+
+    Returns
+    -------
+    str
+        Hex color string.
+    """
+    if colors is None:
+        return PALETTE[index % len(PALETTE)]
+    if isinstance(colors, str):
+        return colors
+    if isinstance(colors, dict):
+        return colors.get(key, PALETTE[index % len(PALETTE)])
+    return PALETTE[index % len(PALETTE)]
 
 
 # =============================================================================
