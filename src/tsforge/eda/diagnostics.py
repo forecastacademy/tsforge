@@ -25,6 +25,7 @@ from .ts_features_extension import (
 DEFAULT_STRUCTURE_COLS = ["trend", "seasonal_strength", "MI_top_k_lags"]
 DEFAULT_CHAOS_COLS = ["permutation_entropy", "adi", "lumpiness"]
 
+
 def pct_missing_dates(x):
     freq = pd.infer_freq(x)
     if not freq:
@@ -65,23 +66,41 @@ def compute_forecastability(
     chaos_weights: Optional[List[float]] = None,
 ) -> pd.DataFrame:
     """
-    Compute structure score, chaos score, and forecastability lane for each series.
+    Compute structure score, chaos score, and forecastability classification for each series.
 
-    The function applies a gated routing logic:
+    The Lie Detector 6 (LD6) collapses 6 anchor diagnostics into 2 composite scores:
+    - **Structure Score**: Normalized average of trend, seasonality, mutual information.
+      Higher = more learnable patterns.
+    - **Chaos Score**: Normalized average of entropy, ADI, lumpiness.
+      Higher = less trustworthy signal.
+
+    Forecastability Lanes (gated routing logic):
     1. Short History — fewer than min_periods observations
-    2. Sparse — ADI exceeds adi_threshold (intermittency overrides all other metrics)
+    2. Sparse — ADI exceeds adi_threshold (intermittency overrides other metrics)
     3. Stable — high structure, low chaos
     4. Complex — high structure, high chaos
-    5. Messy — everything else (low structure)
+    5. Messy — low structure (everything else)
+
+    XYZ Classification (improved ABC-XYZ from Lie Detector methodology):
+    - **X**: Low Chaos (left column) — most forecastable, regardless of structure
+    - **Y**: High Chaos + High Structure (top-right) — forecastable but noisy
+    - **Z**: High Chaos + Low Structure (bottom-right) — least forecastable
+
+    Key insight: Chaos determines IF you can forecast. Structure determines HOW.
+    Low chaos = forecastable, regardless of structure level.
+
+    This replaces traditional CV-based XYZ. CV measures variation, but high variation ≠ 
+    not forecastable. A series with strong seasonality has high CV but is highly forecastable.
+    The LD6-based XYZ captures actual forecastability.
 
     Parameters
     ----------
     df : pd.DataFrame
         Diagnostics table with one row per series. Must contain the LD6 metric columns.
     structure_cols : list of str, optional
-        Columns for the structure score. Default: ["trend", "seasonal_strength", "x_acf1"]
+        Columns for the structure score. Default: ["trend", "seasonal_strength", "MI_top_k_lags"]
     chaos_cols : list of str, optional
-        Columns for the chaos score. Default: ["entropy", "adi", "lumpiness"]
+        Columns for the chaos score. Default: ["permutation_entropy", "adi", "lumpiness"]
     adi_col : str, default "adi"
         Column containing the ADI (average demand interval) metric.
         Used for the Sparse gate. Must also appear in chaos_cols.
@@ -102,7 +121,7 @@ def compute_forecastability(
     structure_threshold : float, default 0.5
         Structure score above this = "high structure" for lane assignment.
     chaos_threshold : float, default 0.5
-        Chaos score above this = "high chaos" for lane assignment.
+        Chaos score above this = "high chaos" for XYZ assignment.
     structure_weights : list of float, optional
         Weights for each structure metric. Default: equal weights.
     chaos_weights : list of float, optional
@@ -111,10 +130,24 @@ def compute_forecastability(
     Returns
     -------
     pd.DataFrame
-        Original DataFrame with three new columns:
-        - structure_score (float, 0-1)
-        - chaos_score (float, 0-1)
-        - forecastability (str: "Short History", "Sparse", "Stable", "Complex", "Messy")
+        Original DataFrame with new columns:
+        - structure_score (float, 0-1): Composite structure metric
+        - chaos_score (float, 0-1): Composite chaos metric
+        - forecastability (str): Lane label — "Short History", "Sparse", "Stable", "Complex", "Messy"
+        - xyz_class (str): Improved XYZ classification — "X", "Y", or "Z"
+
+    Examples
+    --------
+    >>> scores_df = compute_forecastability(diagnostics, n_periods_col="series_length")
+    >>> scores_df[['unique_id', 'structure_score', 'chaos_score', 'forecastability', 'xyz_class']].head()
+
+    Notes
+    -----
+    The XYZ classification is designed to replace traditional CV-based XYZ in ABC-XYZ analysis.
+    Merge with ABC classes for the full ABC-XYZ matrix:
+    
+    >>> abc_xyz = scores_df.merge(abc_df[['unique_id', 'abc_class']], on='unique_id')
+    >>> abc_xyz['abc_xyz'] = abc_xyz['abc_class'] + '-' + abc_xyz['xyz_class']
     """
     structure_cols = structure_cols or DEFAULT_STRUCTURE_COLS
     chaos_cols = chaos_cols or DEFAULT_CHAOS_COLS
@@ -199,7 +232,34 @@ def compute_forecastability(
     result.loc[remaining & high_structure & high_chaos, "forecastability"] = "Complex"
     # Low structure stays "Messy" (already the default)
 
+    # --- Step 5: Assign XYZ class (improved ABC-XYZ methodology) ---
+    # This replaces traditional CV-based XYZ with LD6-based forecastability
+    #
+    # From Improved ABC-XYZ slide:
+    #   X = Low Chaos (left column — both Stable and Sparse quadrants)
+    #   Y = High Chaos + High Structure (top-right = Complex quadrant)
+    #   Z = High Chaos + Low Structure (bottom-right = Messy quadrant)
+    #
+    # Key insight: Low chaos = forecastable, regardless of structure level.
+    # Structure determines *how* to forecast, chaos determines *if* you can.
+    
+    result["xyz_class"] = "Z"  # Default: high chaos + low structure
+    
+    # X: Low Chaos (left column — forecastable)
+    result.loc[result["chaos_score"] < chaos_threshold, "xyz_class"] = "X"
+    
+    # Y: High Chaos + High Structure (top-right — forecastable but noisy)
+    result.loc[
+        (result["chaos_score"] >= chaos_threshold) & 
+        (result["structure_score"] >= structure_threshold),
+        "xyz_class"
+    ] = "Y"
+    
+    # Z: High Chaos + Low Structure (bottom-right — hardest to forecast)
+    # Already default
+
     return result
+
 
 TSFORGE_FEATURES = [
     # BASE TSFEATURES

@@ -40,6 +40,13 @@ ABC_BAND_COLORS = {
     "C": "rgba(231,76,60,0.08)",
 }
 
+# Watermark label text for each ABC class
+ABC_WATERMARK_TEXT = {
+    "A": "VITAL FEW",
+    "B": "IMPORTANT",
+    "C": "LONG TAIL",
+}
+
 
 def plot_pareto(
     df: pd.DataFrame,
@@ -62,6 +69,8 @@ def plot_pareto(
     # Display – new layers
     show_bars: bool = False,
     show_fill_bands: bool = False,
+    show_zone_labels: bool = False,
+    zone_label_style: str = "watermark",   # "watermark" | "edge"
     show_callout: bool = False,
     callout_threshold: float = 80,
     # Curve segmentation + legend
@@ -273,6 +282,63 @@ def plot_pareto(
                 yanchor="middle",
                 opacity=0.55,
             )
+
+    # ------------------------------------------------------------------ #
+    # Step 6b: Watermark-style zone labels                                #
+    # ------------------------------------------------------------------ #
+    if show_zone_labels and color_col is not None and len(data) > 0:
+        from .._styling import hex_to_rgba
+
+        class_order = sorted(pd.unique(data[color_col]))
+        for cls in class_order:
+            sub = data[data[color_col] == cls]
+            if sub.empty:
+                continue
+
+            x_mid = (float(sub["_rank"].min()) + float(sub["_rank"].max())) / 2
+            seg_color = (colors.get(cls) if colors else None) or ABC_COLORS.get(cls, "#888")
+            wm_text = ABC_WATERMARK_TEXT.get(cls, cls)
+
+            if zone_label_style == "watermark":
+                # Large letter watermark
+                fig.add_annotation(
+                    x=x_mid,
+                    y=0.45,
+                    xref="x",
+                    yref="paper",
+                    text=f"<b>{cls}</b>",
+                    font=dict(size=48, color=hex_to_rgba(seg_color, 0.10)),
+                    showarrow=False,
+                    xanchor="center",
+                    yanchor="middle",
+                )
+                # Subtitle below
+                fig.add_annotation(
+                    x=x_mid,
+                    y=0.35,
+                    xref="x",
+                    yref="paper",
+                    text=wm_text,
+                    font=dict(size=10, family="monospace", color=hex_to_rgba(seg_color, 0.07)),
+                    showarrow=False,
+                    xanchor="center",
+                    yanchor="middle",
+                )
+            else:
+                # "edge" style — small label at top of zone boundary
+                x_right = float(sub["_rank"].max()) + 0.5
+                fig.add_annotation(
+                    x=x_right,
+                    y=0.96,
+                    xref="x",
+                    yref="paper",
+                    text=f"<b>{cls}</b> {wm_text}",
+                    font=dict(size=10, color=seg_color),
+                    showarrow=False,
+                    xanchor="right",
+                    yanchor="top",
+                    opacity=0.5,
+                )
 
     # ------------------------------------------------------------------ #
     # Step 7: Threshold lines (draw on cumulative axis)                   #
