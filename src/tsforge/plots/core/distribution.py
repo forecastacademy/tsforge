@@ -109,7 +109,7 @@ METRIC_CONFIG = {
 }
 
 
-def plot_distribution(
+def plot_metric_distribution(
     df: pd.DataFrame,
     *,
     # Time series mode parameters
