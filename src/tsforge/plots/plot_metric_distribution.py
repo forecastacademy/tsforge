@@ -3,10 +3,10 @@ from typing import Literal, Optional, Tuple
 import pandas as pd
 import plotly.graph_objects as go
 
-from tsforge.plots.style import _apply_tsforge_style
+from tsforge.plots._styling import apply_theme
 
 
-def plot_metric_distribution(
+def plot_distribution(
     df: pd.DataFrame,
     metric: str = "wmape",
     models: Optional[list[str]] = None,
@@ -60,7 +60,7 @@ def plot_metric_distribution(
     Examples
     --------
     >>> # Boxplot comparing all models against anchor
-    >>> fig = plot_model_comparison(
+    >>> fig = plot_distribution(
     ...     df,
     ...     metric='wmape',
     ...     anchor_model='SN52',
@@ -69,7 +69,7 @@ def plot_metric_distribution(
     >>> fig.show()
 
     >>> # Histogram comparing two specific models
-    >>> fig = plot_model_comparison(
+    >>> fig = plot_distribution(
     ...     df,
     ...     metric='wmape',
     ...     models=['Naive', 'SN52'],
@@ -78,7 +78,7 @@ def plot_metric_distribution(
     >>> fig.show()
 
     >>> # Histogram with anchor and automatic second model
-    >>> fig = plot_model_comparison(
+    >>> fig = plot_distribution(
     ...     df,
     ...     metric='wmape',
     ...     anchor_model='SN52',
@@ -262,7 +262,7 @@ def _plot_boxplot(
             )
         print(f"{'='*60}\n")
 
-    return _apply_tsforge_style(fig, engine="plotly")
+    return apply_theme(fig)
 
 
 def _plot_histogram(
@@ -427,4 +427,4 @@ def _plot_histogram(
         print(f"\n{model2} vs {model1}: {delta_pct:+.1f}% (median)")
         print(f"{'='*60}\n")
 
-    return _apply_tsforge_style(fig, engine="plotly")
+    return apply_theme(fig)
