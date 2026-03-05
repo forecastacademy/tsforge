@@ -543,18 +543,55 @@ def _plot_metric_distribution(
         color = colors.get(col, PALETTE[i % len(PALETTE)])
         traces = []
 
-        # Histogram
-        traces.append(
-            go.Histogram(
-                x=data,
-                nbinsx=bins,
-                marker=dict(color=color, opacity=0.7),
-                name=col,
+        # Create trace based on kind parameter
+        if kind == "histogram":
+            traces.append(
+                go.Histogram(
+                    x=data,
+                    nbinsx=bins,
+                    marker=dict(color=color, opacity=0.7),
+                    name=col,
+                )
             )
-        )
+        elif kind == "density":
+            if len(data) >= 2:
+                hist, bin_edges = np.histogram(data, bins=bins, density=True)
+                bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+                traces.append(
+                    go.Scatter(
+                        x=bin_centers,
+                        y=hist,
+                        mode="lines",
+                        name=col,
+                        line=dict(color=color, width=2),
+                        fill="tozeroy",
+                        opacity=0.6,
+                    )
+                )
+        elif kind == "box":
+            traces.append(
+                go.Box(
+                    x=data,
+                    marker=dict(color=color),
+                    name=col,
+                    boxpoints="outliers",
+                )
+            )
+        elif kind == "violin":
+            traces.append(
+                go.Violin(
+                    x=data,
+                    line=dict(color=color),
+                    name=col,
+                    box_visible=True,
+                    meanline_visible=True,
+                )
+            )
+        else:
+            raise ValueError(f"Invalid kind: {kind}. Must be one of: histogram, density, box, violin")
 
         # KDE overlay
-        if show_kde and len(data) > 1:
+        if show_kde and len(data) > 1 and kind in ["histogram", "density"]:
             hist, bin_edges = np.histogram(data, bins=bins, density=True)
             bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
             # Scale KDE to match histogram
@@ -1215,15 +1252,56 @@ def _plot_metric_distribution_grouped(
 
             color = PALETTE[j % len(PALETTE)]
 
-            traces.append(
-                go.Histogram(
-                    x=group_data,
-                    nbinsx=bins,
-                    marker=dict(color=color, opacity=0.6),
-                    name=str(group),
-                    legendgroup=str(group),
+            # Create trace based on kind parameter
+            if kind == "histogram":
+                traces.append(
+                    go.Histogram(
+                        x=group_data,
+                        nbinsx=bins,
+                        marker=dict(color=color, opacity=0.6),
+                        name=str(group),
+                        legendgroup=str(group),
+                    )
                 )
-            )
+            elif kind == "density":
+                if len(group_data) >= 2:
+                    hist, bin_edges = np.histogram(group_data, bins=bins, density=True)
+                    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+                    traces.append(
+                        go.Scatter(
+                            x=bin_centers,
+                            y=hist,
+                            mode="lines",
+                            name=str(group),
+                            line=dict(color=color, width=2),
+                            fill="tozeroy",
+                            opacity=0.6,
+                            legendgroup=str(group),
+                        )
+                    )
+            elif kind == "box":
+                traces.append(
+                    go.Box(
+                        x=group_data,
+                        marker=dict(color=color),
+                        name=str(group),
+                        legendgroup=str(group),
+                        boxpoints="outliers",
+                    )
+                )
+            elif kind == "violin":
+                traces.append(
+                    go.Violin(
+                        x=group_data,
+                        line=dict(color=color),
+                        name=str(group),
+                        legendgroup=str(group),
+                        box_visible=True,
+                        meanline_visible=True,
+                    )
+                )
+            else:
+                raise ValueError(f"Invalid kind: {kind}. Must be one of: histogram, density, box, violin")
 
         traces_by_id[col] = traces
 
@@ -1239,8 +1317,9 @@ def _plot_metric_distribution_grouped(
         style=style,
     )
 
-    # Set barmode for overlaid histograms
-    fig.update_layout(barmode="overlay")
+    # Set barmode for overlaid histograms (only for histogram/density)
+    if kind in ["histogram", "density"]:
+        fig.update_layout(barmode="overlay")
 
     # Add threshold lines and annotations for facet mode
     if mode == "facet":
