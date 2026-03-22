@@ -433,9 +433,8 @@ def datetime_diagnostics(
     # FREQUENCY & GAPS
     # ============================================
     
-    sample_id = df[id_col].iloc[0]
-    sample_dates = df[df[id_col] == sample_id][date_col].sort_values()
-    global_freq = pd.infer_freq(sample_dates)
+    all_dates = df[date_col].drop_duplicates().sort_values()
+    global_freq = pd.infer_freq(all_dates)
     
     if global_freq:
         result['inferred_freq'] = global_freq
