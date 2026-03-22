@@ -6,14 +6,18 @@ Core plot implementations. These are the canonical functions used by notebooks.
 """
 
 from .timeseries import plot_timeseries
-from .distribution import plot_distribution
+from .distribution import plot_metric_distribution
 from .scatter import plot_scatter
 from .pareto import plot_pareto
 from .bar import plot_bar
 from .panel import plot_panel
 
+# Alias for backward compatibility
+plot_distribution = plot_metric_distribution
+
 __all__ = [
     "plot_timeseries",
+    "plot_metric_distribution",
     "plot_distribution",
     "plot_scatter",
     "plot_pareto",
