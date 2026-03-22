@@ -49,7 +49,11 @@ def finalize_figure(
     # Style overrides (pre-legend)
     # -------------------------
     if "title" in style:
-        fig.update_layout(title={"text": style["title"], "font": {"size": 18}})
+        t = THEMES.get(theme, THEMES["fa"])
+        fig.update_layout(title={
+            "text": style["title"],
+            "font": {"size": 18, "color": t.get("title_color")},
+        })
 
     if "subtitle" in style:
         _upsert_subtitle(fig, str(style["subtitle"]))
@@ -121,7 +125,7 @@ def finalize_figure(
         legend_layout, margin_bottom = {}, base_margin_bottom
     else:
         legend_layout, margin_bottom = _resolve_legend_position(
-            legend_pos, fig, base_margin_bottom
+            legend_pos, fig, base_margin_bottom, theme=theme
         )
 
     # -------------------------
@@ -195,13 +199,16 @@ def _count_distinct_legend_labels(fig: go.Figure) -> int:
     return len(labels)
 
 
-def _upsert_subtitle(fig: go.Figure, subtitle: str) -> None:
-    """Add/replace a subtitle annotation under the main title."""
+def _upsert_subtitle(fig, subtitle: str, theme: str = "fa") -> None:
+    t = THEMES.get(theme, THEMES["fa"])
     if not subtitle:
         return
 
     existing = list(getattr(fig.layout, "annotations", []) or [])
     existing = [a for a in existing if getattr(a, "name", None) != "tsforge_subtitle"]
+    theme = getattr(fig.layout, "meta", {}).get("theme", "fa") if getattr(fig.layout, "meta", None) else "fa"
+    t = THEMES.get(theme, THEMES["fa"])
+    subtitle_color = t.get("subtitle_color", "#666666")
 
     existing.append(
         dict(
@@ -212,7 +219,7 @@ def _upsert_subtitle(fig: go.Figure, subtitle: str) -> None:
             yref="paper",
             text=subtitle,
             showarrow=False,
-            font=dict(size=13, color="#444"),
+            font=dict(size=13, color=subtitle_color),
             align="left",
         )
     )
@@ -224,13 +231,15 @@ def _resolve_legend_position(
     position: str,
     fig: go.Figure,
     base_margin_bottom: int,
+    theme: str = "fa",
 ) -> tuple:
     """Convert a legend position string to Plotly legend dict + bottom margin."""
+    t = THEMES.get(theme, THEMES["fa"])
     pos = position.lower().strip()
 
     base_style = dict(
-        bgcolor="rgba(255,255,255,0.9)",
-        bordercolor="rgba(0,0,0,0.1)",
+        bgcolor=t.get("legend_bg", "rgba(255,255,255,0.9)"),
+        bordercolor=t.get("legend_border", "rgba(0,0,0,0.1)"),
         borderwidth=1,
     )
 

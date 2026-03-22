@@ -148,7 +148,7 @@ THEMES: Dict[str, Dict[str, Any]] = {
         "background": "white",
         "grid_color": "rgba(0,0,0,0.06)",
         "axis_color": "#4A4E69",
-        "title_color": "#2C32D5",
+        "title_color": "#1A1A21",
         "subtitle_color": "#444444",
         "line_width": 2.3,
         "line_color": "#2C32D5",
@@ -160,6 +160,37 @@ THEMES: Dict[str, Dict[str, Any]] = {
         "legend_position": "top right",
         "legend_font_size": 12,
     },
+    "fa_dark": {
+        "font": "Inter, system-ui, -apple-system, Segoe UI, sans-serif",
+        "font_size": 14,
+        # Backgrounds (matches screenshot)
+        "background": "#222222",
+        "plot_bg": "#222222",
+
+        # Text
+        "axis_color": "#a9a29a",
+        "title_color": "#e8e0d4",
+        "subtitle_color": "#8e877f",
+
+        # Grid
+        "grid_color": "#2f2f2f",
+        "grid_dash": "dot",  # dashed grid look
+
+        # Legend
+        "legend_bg": "rgba(0,0,0,0)",
+        "legend_border": "rgba(0,0,0,0)",
+        "legend_font_color": "#a9a29a",
+        "legend_position": "bottom center",
+        "legend_font_size": 13,
+
+        # Hover
+        "hover_bg": "#2a2a2a",
+        "hover_border": "#444444",
+
+        # Lines
+        "line_width": 2.4,
+        "pi_opacity": 0.18,
+        },
     "mckinsey": {
         "font": "Helvetica Neue",
         "font_size": 15,
@@ -241,27 +272,68 @@ def apply_theme(fig, theme: str = "fa"):
     """Apply global tsforge theme to a Plotly figure."""
     t = THEMES.get(theme, THEMES["fa"])
 
+    bg = t.get("background", "white")
+    grid = t.get("grid_color", "rgba(0,0,0,0.06)")
+    grid_dash = t.get("grid_dash", None)
+    axis = t.get("axis_color", "#444444")
+    title_c = t.get("title_color", axis)
+    hover_bg = t.get("hover_bg", "rgba(0,0,0,0.75)")
+    hover_border = t.get("hover_border", "rgba(255,255,255,0.25)")
+
     fig.update_layout(
-        font=dict(family=t["font"], size=t["font_size"]),
-        plot_bgcolor=t["background"],
-        paper_bgcolor=t["background"],
+        font=dict(family=t["font"], size=t["font_size"], color=axis),
+        plot_bgcolor=bg,
+        paper_bgcolor=bg,
+        title=dict(
+            x=0.02,
+            xanchor="left",
+            font=dict(color=title_c, size=40),  # big title like screenshot
+        ),
+        hoverlabel=dict(
+            bgcolor=hover_bg,
+            bordercolor=hover_border,
+            font=dict(color=t.get("legend_font_color", axis)),
+        ),
     )
 
     fig.update_xaxes(
         showgrid=True,
-        gridcolor=t["grid_color"],
-        color=t["axis_color"],
-        tickcolor=t["axis_color"],
+        gridcolor=grid,
+        griddash=grid_dash,
+        color=axis,
+        tickcolor=axis,
+        linecolor=grid,
+        showline=True,
+        zeroline=False,
+        # tickfont=dict(size=14),
+        # titlefont=dict(size=16, color=axis),
     )
 
     fig.update_yaxes(
         showgrid=True,
-        gridcolor=t["grid_color"],
-        color=t["axis_color"],
-        tickcolor=t["axis_color"],
+        gridcolor=grid,
+        griddash=grid_dash,
+        color=axis,
+        tickcolor=axis,
+        linecolor=grid,
+        showline=True,
+        zeroline=False,
+        # tickfont=dict(size=14),
+        # titlefont=dict(size=16, color=axis),
     )
 
+    # Subplot titles + subtitles are annotations (make them theme-aware)
+    if getattr(fig.layout, "annotations", None):
+        anns = []
+        for a in fig.layout.annotations:
+            a = a.to_plotly_json() if hasattr(a, "to_plotly_json") else dict(a)
+            a.setdefault("font", {})
+            a["font"].setdefault("color", axis)
+            anns.append(a)
+        fig.update_layout(annotations=anns)
+
     return fig
+
 
 
 def apply_legend(fig, theme: str = "fa"):
